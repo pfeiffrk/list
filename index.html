@@ -284,6 +284,17 @@
             vertical-align: top;
             position: relative;
         }
+        .note-box .note-content img {
+            max-width: 100%;
+            height: auto;
+            cursor: default;
+            display: block;
+            margin: 4px 0;
+            border-radius: 2px;
+        }
+        .note-box .note-content img:hover {
+            outline: 2px solid #4a90d9;
+        }
         .note-box .note-content ul,
         .note-box .note-content ol {
             padding-left: 24px;
@@ -447,6 +458,9 @@
     <button onclick="toggleParaSpacing(event)" title="Paragraph Spacing" id="btnPara"><b>P</b></button>
     <div class="sep"></div>
     <button onclick="toggleTablePicker(event)" title="Insert Table" id="btnTable">Table</button>
+    <div class="sep"></div>
+    <button onclick="document.getElementById('imgFile').click()" title="Insert Image">Image</button>
+    <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
 </div>
 
 <!-- Table Picker Popup -->
@@ -1324,6 +1338,85 @@
         if (cleaned) {
             document.execCommand('insertHTML', false, cleaned);
             scheduleSave();
+        }
+    });
+
+    // ── Insert Image ──
+    function insertImage(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        e.target.value = '';
+        processImageFile(file);
+    }
+
+    function processImageFile(file) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const dataUrl = ev.target.result;
+            if (activeBox) {
+                const content = activeBox.querySelector('.note-content');
+                content.focus();
+                document.execCommand('insertHTML', false, '<img src="' + dataUrl + '">');
+            } else {
+                // No active box — create a new one with the image
+                const canvas = document.getElementById('canvas');
+                const box = createNoteBox(40, 40, 400, null, '<img src="' + dataUrl + '">');
+                selectBox(box);
+            }
+            scheduleSave();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Drag-and-drop images onto canvas or note boxes
+    document.getElementById('canvas').addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    document.getElementById('canvas').addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (!files.length) return;
+
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            const noteBox = e.target.closest('.note-box');
+            if (noteBox) {
+                selectBox(noteBox);
+            } else {
+                // Create a new box at the drop position
+                const canvas = document.getElementById('canvas');
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left + canvas.scrollLeft;
+                const y = e.clientY - rect.top + canvas.scrollTop;
+                activeBox = null; // force processImageFile to create a new box
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const box = createNoteBox(x - 10, y - 10, 400, null, '<img src="' + ev.target.result + '">');
+                    selectBox(box);
+                    scheduleSave();
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+            processImageFile(file);
+        }
+    });
+
+    // Also support pasting images
+    document.addEventListener('paste', function handleImagePaste(e) {
+        const content = e.target.closest('.note-content');
+        if (!content) return;
+        const items = e.clipboardData.items;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                processImageFile(file);
+                return;
+            }
         }
     });
 
