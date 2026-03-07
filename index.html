@@ -250,16 +250,35 @@
             color: #999;
             border-top: 1px solid #ddd;
         }
-        #pagePanel .panel-actions a {
-            display: block;
-            text-align: center;
-            font-size: 12px;
-            color: #4a90d9;
-            cursor: pointer;
-            margin-top: 6px;
-            text-decoration: none;
+        /* ── Version Preview Banner ── */
+        #versionBanner {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px;
+            background: #fff3cd;
+            border-bottom: 1px solid #e0c86e;
+            font-size: 13px;
+            color: #664d03;
         }
-        #pagePanel .panel-actions a:hover { text-decoration: underline; }
+        #versionBanner.show { display: flex; }
+        #versionBanner span { flex: 1; }
+        #versionBanner button {
+            padding: 4px 12px;
+            font-size: 12px;
+            border: 1px solid #c0a030;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            background: #fff;
+            color: #664d03;
+        }
+        #versionBanner button:first-of-type {
+            background: #4a90d9;
+            color: #fff;
+            border-color: #4a90d9;
+        }
+        #versionBanner button:hover { opacity: 0.85; }
 
         /* ── Import toast ── */
         #importToast {
@@ -551,6 +570,15 @@
     <div class="sep"></div>
     <button onclick="document.getElementById('imgFile').click()" title="Insert Image">Image</button>
     <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
+    <div style="flex:1"></div>
+    <button onclick="toggleVersionPanel()" title="Previous Page Versions" id="btnVersions">Versions</button>
+</div>
+
+<!-- Version Preview Banner -->
+<div id="versionBanner">
+    <span id="versionBannerText"></span>
+    <button onclick="restorePreviewedVersion()" id="btnRestoreVersion">Restore This Version</button>
+    <button onclick="closeVersionPreview()">Go Back</button>
 </div>
 
 <!-- Table Picker Popup -->
@@ -606,7 +634,6 @@
         <div class="panel-actions">
             <button onclick="document.getElementById('importFile').click()" title="Import OneNote HTML">Import .htm</button>
             <input type="file" id="importFile" accept=".htm,.html,.mht,.mhtml" style="display:none" onchange="importHTMLFile(event)">
-            <a onclick="toggleVersionPanel()">Previous Page Versions</a>
         </div>
         <div id="pageList"></div>
     </div>
@@ -1640,17 +1667,13 @@
 
     // ── Version History Panel ──
     let previewingVersion = false;
+    let previewedIndex = null;
 
     function toggleVersionPanel() {
         const panel = document.getElementById('versionPanel');
         const isOpen = panel.classList.contains('open');
         if (isOpen) {
-            panel.classList.remove('open');
-            // If previewing, restore current version
-            if (previewingVersion) {
-                loadCanvasForPage(activePageId);
-                previewingVersion = false;
-            }
+            closeVersionPreview();
         } else {
             // Snapshot current state before opening
             saveCanvasToPage();
@@ -1672,6 +1695,8 @@
         }
 
         // Show newest first
+        const page = pages.find(p => p.id === activePageId);
+        const pageName = page ? page.name : 'Page';
         for (let i = history.length - 1; i >= 0; i--) {
             const v = history[i];
             const item = document.createElement('div');
@@ -1682,18 +1707,9 @@
             const d = new Date(v.timestamp);
             time.textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const restore = document.createElement('button');
-            restore.className = 'v-restore';
-            restore.textContent = 'Restore';
-            restore.addEventListener('click', (e) => {
-                e.stopPropagation();
-                restoreVersion(i);
-            });
-
-            item.addEventListener('click', () => previewVersion(i, item));
+            item.addEventListener('click', () => previewVersion(i));
 
             item.appendChild(time);
-            item.appendChild(restore);
             list.appendChild(item);
         }
     }
@@ -1704,6 +1720,7 @@
         if (!history[index]) return;
 
         previewingVersion = true;
+        previewedIndex = index;
 
         // Load the snapshot onto the canvas (without saving it)
         const canvas = document.getElementById('canvas');
@@ -1719,12 +1736,22 @@
         const items = document.querySelectorAll('.version-item');
         const reverseIdx = (history.length - 1) - index;
         if (items[reverseIdx]) items[reverseIdx].classList.add('active');
+
+        // Show banner
+        const page = pages.find(p => p.id === activePageId);
+        const pageName = page ? page.name : 'Page';
+        const d = new Date(history[index].timestamp);
+        const timeStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('versionBannerText').textContent =
+            'Viewing "' + pageName + '" from ' + timeStr;
+        document.getElementById('versionBanner').classList.add('show');
     }
 
-    function restoreVersion(index) {
+    function restorePreviewedVersion() {
+        if (previewedIndex === null) return;
         const versions = getVersions();
         const history = versions[activePageId] || [];
-        if (!history[index]) return;
+        if (!history[previewedIndex]) return;
 
         // Save current as a version before restoring
         saveCanvasToPage();
@@ -1733,14 +1760,26 @@
         // Apply the old version
         const page = pages.find(p => p.id === activePageId);
         if (page) {
-            page.boxes = JSON.parse(JSON.stringify(history[index].boxes));
+            page.boxes = JSON.parse(JSON.stringify(history[previewedIndex].boxes));
             savePages();
         }
 
         previewingVersion = false;
-        loadCanvasForPage(activePageId);
+        previewedIndex = null;
+        document.getElementById('versionBanner').classList.remove('show');
         document.getElementById('versionPanel').classList.remove('open');
+        loadCanvasForPage(activePageId);
         showToast('Page restored to previous version');
+    }
+
+    function closeVersionPreview() {
+        document.getElementById('versionPanel').classList.remove('open');
+        document.getElementById('versionBanner').classList.remove('show');
+        if (previewingVersion) {
+            loadCanvasForPage(activePageId);
+            previewingVersion = false;
+            previewedIndex = null;
+        }
     }
 
     // ── Init ──
