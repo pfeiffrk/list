@@ -914,6 +914,21 @@
         }
     });
 
+    // ── Delete key removes selected (non-editing) box ──
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Delete' || !activeBox) return;
+        // Don't delete if user is typing in a contenteditable area
+        const active = document.activeElement;
+        if (active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        activeBox.remove();
+        activeBox = null;
+        scheduleSave();
+        if (!document.querySelector('.note-box')) {
+            const hint = document.getElementById('canvas-hint');
+            if (hint) hint.style.display = '';
+        }
+    });
+
     // ── Persistence ──
     function scheduleSave() {
         clearTimeout(saveTimer);
