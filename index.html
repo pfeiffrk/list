@@ -456,6 +456,27 @@
             user-select: none;
         }
 
+        /* ── Page Title ── */
+        #pageTitle {
+            padding: 16px 24px 0;
+            flex-shrink: 0;
+        }
+        #pageTitle input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            font-size: 22px;
+            font-family: inherit;
+            font-weight: 600;
+            color: #333;
+            padding: 4px 0 6px;
+            outline: none;
+            background: transparent;
+        }
+        #pageTitle input:focus {
+            border-bottom-color: #4a90d9;
+        }
+
         /* ── Text Boxes ── */
         .note-box {
             position: absolute;
@@ -818,9 +839,13 @@
         <div id="pageList"></div>
     </div>
 
-    <!-- Canvas -->
-    <div id="canvas">
-        <div id="canvas-hint">Double-click anywhere to add a note</div>
+    <!-- Canvas wrapper -->
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <div id="pageTitle">
+            <input type="text" id="pageTitleInput" placeholder="Untitled Page" spellcheck="false">
+        </div>
+        <div id="canvas">
+            <div id="canvas-hint">Double-click anywhere to add a note</div>
         <!-- Version History Panel -->
         <div id="versionPanel">
             <div class="vp-header">
@@ -830,6 +855,7 @@
             <div id="versionList"></div>
             <div class="vp-note">Click to preview, "Restore" to roll back</div>
         </div>
+    </div>
     </div>
 </div>
 
@@ -1294,7 +1320,21 @@
         // Show/hide hint
         const hint = document.getElementById('canvas-hint');
         if (hint) hint.style.display = page.boxes.length ? 'none' : '';
+
+        // Set page title
+        const titleInput = document.getElementById('pageTitleInput');
+        if (titleInput) titleInput.value = page.name || '';
     }
+
+    // ── Page title sync ──
+    document.getElementById('pageTitleInput').addEventListener('input', (e) => {
+        const page = pages.find(p => p.id === activePageId);
+        if (!page) return;
+        const name = e.target.value.trim() || 'Untitled Page';
+        page.name = name;
+        renderPageList();
+        scheduleSave();
+    });
 
     // ── Formatting ──
     function fmt(command) {
