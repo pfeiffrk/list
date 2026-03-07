@@ -280,6 +280,148 @@
         }
         #versionBanner button:hover { opacity: 0.85; }
 
+        /* ── Lock Screen ── */
+        #lockScreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #2c3e50;
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        #lockScreen.show { display: flex; }
+        .lock-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 32px 36px;
+            width: 340px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .lock-box h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .lock-box p {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+        .lock-box input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+        .lock-box input:focus { outline: none; border-color: #4a90d9; }
+        .lock-box .lock-error {
+            color: #c44;
+            font-size: 12px;
+            min-height: 18px;
+            margin-bottom: 8px;
+        }
+        .lock-box button {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 6px;
+        }
+        .lock-box button:hover { background: #3a7bc8; }
+        .lock-box .lock-secondary {
+            background: none;
+            color: #888;
+            font-size: 12px;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .lock-box .lock-secondary:hover { color: #333; }
+
+        /* ── Settings Modal ── */
+        #settingsOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9000;
+            justify-content: center;
+            align-items: center;
+        }
+        #settingsOverlay.show { display: flex; }
+        .settings-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px 28px;
+            width: 360px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .settings-box h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .settings-box label {
+            font-size: 13px;
+            color: #444;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .settings-box select, .settings-box input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-bottom: 14px;
+        }
+        .settings-box .s-row {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .settings-box .s-row button {
+            padding: 7px 16px;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            background: #fff;
+        }
+        .settings-box .s-row button.primary {
+            background: #4a90d9;
+            color: #fff;
+            border-color: #4a90d9;
+        }
+        .settings-box .s-danger {
+            display: block;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .settings-box .s-danger button {
+            background: none;
+            border: none;
+            color: #c44;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+        }
+        .settings-box .s-danger button:hover { text-decoration: underline; }
+
         /* ── Import toast ── */
         #importToast {
             display: none;
@@ -572,6 +714,8 @@
     <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
     <div style="flex:1"></div>
     <button onclick="toggleVersionPanel()" title="Previous Page Versions" id="btnVersions">Versions</button>
+    <button onclick="openSettings()" title="Settings">Settings</button>
+    <button onclick="lockApp()" title="Lock Now">Lock</button>
 </div>
 
 <!-- Version Preview Banner -->
@@ -620,6 +764,42 @@
     <div class="ctx-item" onclick="tableCtxAction('deleteTable')" style="color:#c44;">Delete Table</div>
 </div>
 
+<!-- Lock Screen -->
+<div id="lockScreen">
+    <div class="lock-box" id="lockBox">
+        <!-- Dynamic: setup or unlock form -->
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-box">
+        <h3>Settings</h3>
+        <label>Auto-lock after inactivity:</label>
+        <select id="settingsTimeout">
+            <option value="0">Never</option>
+            <option value="1">1 minute</option>
+            <option value="5">5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+        </select>
+        <label>Change password:</label>
+        <input type="password" id="settingsOldPw" placeholder="Current password">
+        <input type="password" id="settingsNewPw" placeholder="New password">
+        <input type="password" id="settingsNewPw2" placeholder="Confirm new password">
+        <div id="settingsPwError" style="color:#c44;font-size:12px;min-height:18px;margin-bottom:8px;"></div>
+        <div class="s-row">
+            <button onclick="closeSettings()">Cancel</button>
+            <button class="primary" onclick="saveSettings()">Save</button>
+        </div>
+        <div class="s-danger">
+            <button onclick="removeEncryption()">Remove password and encryption...</button>
+        </div>
+    </div>
+</div>
+
 <!-- Import Toast -->
 <div id="importToast"></div>
 
@@ -654,6 +834,308 @@
 </div>
 
 <script>
+    // ── Encryption (AES-256-GCM via Web Crypto) ──
+    const SALT_KEY = 'onenote_salt';
+    const VERIFY_KEY = 'onenote_verify';
+    const ENCRYPTED_KEY = 'onenote_encrypted';
+    const SETTINGS_KEY = 'onenote_settings';
+    let cryptoKey = null;
+    let lockTimeout = null;
+
+    function getSettings() {
+        try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; }
+    }
+    function putSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+
+    async function deriveKey(password, salt) {
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt', 'decrypt']
+        );
+    }
+
+    async function encryptData(key, plaintext) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const enc = new TextEncoder();
+        const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+        // Combine iv + ciphertext, store as base64
+        const buf = new Uint8Array(iv.length + cipher.byteLength);
+        buf.set(iv);
+        buf.set(new Uint8Array(cipher), iv.length);
+        return btoa(String.fromCharCode(...buf));
+    }
+
+    async function decryptData(key, b64) {
+        const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        const iv = raw.slice(0, 12);
+        const data = raw.slice(12);
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+        return new TextDecoder().decode(plain);
+    }
+
+    function isEncrypted() {
+        return !!localStorage.getItem(VERIFY_KEY);
+    }
+
+    function showLockScreen() {
+        const lock = document.getElementById('lockScreen');
+        const box = document.getElementById('lockBox');
+        lock.classList.add('show');
+
+        if (!isEncrypted()) {
+            // First time — setup
+            box.innerHTML = `
+                <h2>Set Up Password</h2>
+                <p>Encrypt your notes with a master password</p>
+                <input type="password" id="pw1" placeholder="Password" autofocus>
+                <input type="password" id="pw2" placeholder="Confirm password">
+                <div class="lock-error" id="lockError"></div>
+                <button onclick="setupPassword()">Set Password</button>
+                <button class="lock-secondary" onclick="skipEncryption()">Skip — don't encrypt</button>
+            `;
+            setTimeout(() => { const el = document.getElementById('pw1'); if (el) el.focus(); }, 50);
+        } else {
+            // Unlock
+            box.innerHTML = `
+                <h2>Unlock Notes</h2>
+                <p>Enter your password to decrypt</p>
+                <input type="password" id="pwUnlock" placeholder="Password" autofocus>
+                <div class="lock-error" id="lockError"></div>
+                <button onclick="unlockApp()">Unlock</button>
+            `;
+            setTimeout(() => { const el = document.getElementById('pwUnlock'); if (el) el.focus(); }, 50);
+        }
+
+        // Enter key support
+        box.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('pwUnlock')) unlockApp();
+                else if (document.getElementById('pw1')) setupPassword();
+            }
+        });
+    }
+
+    async function setupPassword() {
+        const pw1 = document.getElementById('pw1').value;
+        const pw2 = document.getElementById('pw2').value;
+        const err = document.getElementById('lockError');
+        if (!pw1) { err.textContent = 'Enter a password'; return; }
+        if (pw1.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+        if (pw1 !== pw2) { err.textContent = 'Passwords do not match'; return; }
+
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        localStorage.setItem(SALT_KEY, btoa(String.fromCharCode(...salt)));
+
+        cryptoKey = await deriveKey(pw1, salt);
+
+        // Store verification token
+        const verify = await encryptData(cryptoKey, 'onenote_verified');
+        localStorage.setItem(VERIFY_KEY, verify);
+
+        document.getElementById('lockScreen').classList.remove('show');
+        startApp();
+        resetLockTimer();
+    }
+
+    function skipEncryption() {
+        document.getElementById('lockScreen').classList.remove('show');
+        cryptoKey = null;
+        startApp();
+    }
+
+    async function unlockApp() {
+        const pw = document.getElementById('pwUnlock').value;
+        const err = document.getElementById('lockError');
+        if (!pw) { err.textContent = 'Enter your password'; return; }
+
+        const salt = Uint8Array.from(atob(localStorage.getItem(SALT_KEY)), c => c.charCodeAt(0));
+        const key = await deriveKey(pw, salt);
+
+        try {
+            const result = await decryptData(key, localStorage.getItem(VERIFY_KEY));
+            if (result !== 'onenote_verified') throw new Error();
+        } catch {
+            err.textContent = 'Wrong password';
+            return;
+        }
+
+        cryptoKey = key;
+        document.getElementById('lockScreen').classList.remove('show');
+        startApp();
+        resetLockTimer();
+    }
+
+    function lockApp() {
+        // Save before locking
+        if (cryptoKey) {
+            saveCanvasToPage();
+            encryptAndSave();
+        }
+        // Clear canvas
+        document.getElementById('canvas').querySelectorAll('.note-box').forEach(b => b.remove());
+        activeBox = null;
+        pages = [];
+        showLockScreen();
+    }
+
+    // ── Auto-lock timer ──
+    function resetLockTimer() {
+        clearTimeout(lockTimeout);
+        const s = getSettings();
+        const mins = parseInt(s.lockMinutes) || 0;
+        if (mins > 0 && cryptoKey) {
+            lockTimeout = setTimeout(() => lockApp(), mins * 60000);
+        }
+    }
+
+    // Reset timer on any user activity
+    ['mousedown', 'keydown', 'mousemove', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, () => {
+            if (cryptoKey && !document.getElementById('lockScreen').classList.contains('show')) {
+                resetLockTimer();
+            }
+        }, { passive: true });
+    });
+
+    // ── Encrypted save/load ──
+    async function encryptAndSave() {
+        if (!cryptoKey) return;
+        const data = JSON.stringify({ pages, activePageId });
+        const encrypted = await encryptData(cryptoKey, data);
+        localStorage.setItem(ENCRYPTED_KEY, encrypted);
+        // Remove plaintext keys
+        localStorage.removeItem('onenote_pages');
+        localStorage.removeItem('onenote_active_page');
+    }
+
+    async function decryptAndLoad() {
+        const raw = localStorage.getItem(ENCRYPTED_KEY);
+        if (!raw || !cryptoKey) return false;
+        try {
+            const json = await decryptData(cryptoKey, raw);
+            const data = JSON.parse(json);
+            pages = data.pages || [];
+            activePageId = data.activePageId || (pages[0] && pages[0].id);
+            return true;
+        } catch { return false; }
+    }
+
+    // ── Settings ──
+    function openSettings() {
+        const s = getSettings();
+        document.getElementById('settingsTimeout').value = s.lockMinutes || '0';
+        document.getElementById('settingsOldPw').value = '';
+        document.getElementById('settingsNewPw').value = '';
+        document.getElementById('settingsNewPw2').value = '';
+        document.getElementById('settingsPwError').textContent = '';
+        document.getElementById('settingsOverlay').classList.add('show');
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsOverlay').classList.remove('show');
+    }
+
+    async function saveSettings() {
+        const s = getSettings();
+        s.lockMinutes = document.getElementById('settingsTimeout').value;
+        putSettings(s);
+        resetLockTimer();
+
+        // Handle password change
+        const oldPw = document.getElementById('settingsOldPw').value;
+        const newPw = document.getElementById('settingsNewPw').value;
+        const newPw2 = document.getElementById('settingsNewPw2').value;
+        const err = document.getElementById('settingsPwError');
+
+        if (newPw) {
+            if (!cryptoKey) {
+                // Setting password for first time
+                if (newPw.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+                if (newPw !== newPw2) { err.textContent = 'New passwords do not match'; return; }
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                localStorage.setItem(SALT_KEY, btoa(String.fromCharCode(...salt)));
+                cryptoKey = await deriveKey(newPw, salt);
+                const verify = await encryptData(cryptoKey, 'onenote_verified');
+                localStorage.setItem(VERIFY_KEY, verify);
+                saveCanvasToPage();
+                await encryptAndSave();
+                closeSettings();
+                showToast('Password set — notes are now encrypted');
+                return;
+            }
+            // Changing existing password
+            if (!oldPw) { err.textContent = 'Enter current password'; return; }
+            const salt = Uint8Array.from(atob(localStorage.getItem(SALT_KEY)), c => c.charCodeAt(0));
+            const testKey = await deriveKey(oldPw, salt);
+            try {
+                const r = await decryptData(testKey, localStorage.getItem(VERIFY_KEY));
+                if (r !== 'onenote_verified') throw new Error();
+            } catch { err.textContent = 'Current password is wrong'; return; }
+            if (newPw.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+            if (newPw !== newPw2) { err.textContent = 'New passwords do not match'; return; }
+
+            // Re-encrypt with new password
+            const newSalt = crypto.getRandomValues(new Uint8Array(16));
+            localStorage.setItem(SALT_KEY, btoa(String.fromCharCode(...newSalt)));
+            cryptoKey = await deriveKey(newPw, newSalt);
+            const verify = await encryptData(cryptoKey, 'onenote_verified');
+            localStorage.setItem(VERIFY_KEY, verify);
+            saveCanvasToPage();
+            await encryptAndSave();
+            closeSettings();
+            showToast('Password changed');
+            return;
+        }
+
+        closeSettings();
+        showToast('Settings saved');
+    }
+
+    async function removeEncryption() {
+        if (!isEncrypted()) { closeSettings(); return; }
+        if (!confirm('Remove password? Your notes will be stored unencrypted.')) return;
+        // Decrypt and save as plaintext
+        saveCanvasToPage();
+        localStorage.setItem('onenote_pages', JSON.stringify(pages));
+        localStorage.setItem('onenote_active_page', activePageId);
+        localStorage.removeItem(ENCRYPTED_KEY);
+        localStorage.removeItem(VERIFY_KEY);
+        localStorage.removeItem(SALT_KEY);
+        cryptoKey = null;
+        clearTimeout(lockTimeout);
+        closeSettings();
+        showToast('Encryption removed');
+    }
+
+    // ── App startup ──
+    function startApp() {
+        if (cryptoKey) {
+            decryptAndLoad().then(ok => {
+                if (!ok) loadPagesPlaintext();
+                finishStartup();
+            });
+        } else {
+            loadPagesPlaintext();
+            finishStartup();
+        }
+    }
+
+    function finishStartup() {
+        if (pages.length === 0) {
+            pages = [{ id: 'page_1', name: 'Page 1', boxes: [] }];
+        }
+        if (!activePageId || !pages.find(p => p.id === activePageId)) {
+            activePageId = pages[0].id;
+        }
+        renderPageList();
+        loadCanvasForPage(activePageId);
+    }
+
     const PAGES_KEY = 'onenote_pages';
     const ACTIVE_KEY = 'onenote_active_page';
     let pages = [];
@@ -663,7 +1145,7 @@
     let saveTimer = null;
 
     // ── Page Management ──
-    function loadPages() {
+    function loadPagesPlaintext() {
         try {
             pages = JSON.parse(localStorage.getItem(PAGES_KEY)) || [];
         } catch { pages = []; }
@@ -677,16 +1159,16 @@
                 }
             } catch {}
         }
-        if (pages.length === 0) {
-            pages = [{ id: 'page_1', name: 'Page 1', boxes: [] }];
-        }
-        activePageId = localStorage.getItem(ACTIVE_KEY) || pages[0].id;
-        if (!pages.find(p => p.id === activePageId)) activePageId = pages[0].id;
+        activePageId = localStorage.getItem(ACTIVE_KEY) || (pages[0] && pages[0].id);
     }
 
     function savePages() {
-        localStorage.setItem(PAGES_KEY, JSON.stringify(pages));
-        localStorage.setItem(ACTIVE_KEY, activePageId);
+        if (cryptoKey) {
+            encryptAndSave();
+        } else {
+            localStorage.setItem(PAGES_KEY, JSON.stringify(pages));
+            localStorage.setItem(ACTIVE_KEY, activePageId);
+        }
     }
 
     function addPage() {
@@ -1784,9 +2266,17 @@
 
     // ── Init ──
     buildTableGrid();
-    loadPages();
-    renderPageList();
-    loadCanvasForPage(activePageId);
+    if (isEncrypted()) {
+        showLockScreen();
+    } else {
+        // No encryption — check if first visit to offer setup
+        const hasData = localStorage.getItem(PAGES_KEY) || localStorage.getItem('onenote_boxes');
+        if (!hasData) {
+            showLockScreen(); // offer to set up password
+        } else {
+            startApp(); // existing unencrypted data, just load
+        }
+    }
 </script>
 </body>
 </html>
