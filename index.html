@@ -70,6 +70,17 @@
             position: relative;
             background: #fff;
             overflow: auto;
+            min-height: 0;
+        }
+        #canvas-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #bbb;
+            font-size: 18px;
+            pointer-events: none;
+            user-select: none;
         }
 
         /* ── Text Boxes ── */
@@ -219,7 +230,9 @@
 </div>
 
 <!-- Canvas -->
-<div id="canvas"></div>
+<div id="canvas">
+    <div id="canvas-hint">Double-click anywhere to add a note</div>
+</div>
 
 <script>
     const STORAGE_KEY = 'onenote_boxes';
@@ -329,6 +342,10 @@
             boxes = boxes.filter(b => b.id !== box.dataset.id);
             if (activeBox === box) activeBox = null;
             scheduleSave();
+            if (!document.querySelector('.note-box')) {
+                const hint = document.getElementById('canvas-hint');
+                if (hint) hint.style.display = '';
+            }
         });
         handle.appendChild(dots);
         handle.appendChild(delBtn);
@@ -375,6 +392,8 @@
         initDrag(handle, box);
 
         document.getElementById('canvas').appendChild(box);
+        const hint = document.getElementById('canvas-hint');
+        if (hint) hint.style.display = 'none';
         return box;
     }
 
