@@ -90,9 +90,10 @@
             min-height: 60px;
             background: #fff;
             border: 2px solid transparent;
-            display: flex;
+            display: inline-flex;
             flex-direction: column;
             z-index: 1;
+            width: auto;
         }
         .note-box.selected {
             border-color: #4a90d9;
@@ -136,7 +137,7 @@
             outline: none;
             font-size: 14px;
             line-height: 1.5;
-            overflow: auto;
+            overflow: visible;
             resize: both;
             min-width: 140px;
             min-height: 40px;
@@ -144,7 +145,6 @@
         .note-box .note-content table {
             border-collapse: collapse;
             margin: 4px 0;
-            table-layout: fixed;
         }
         .note-box .note-content td {
             border: 1px solid #bbb;
@@ -452,8 +452,7 @@
         box.dataset.id = id || nextId++;
         box.style.left = x + 'px';
         box.style.top = y + 'px';
-        if (w) box.style.width = w + 'px';
-        if (h) box.style.height = h + 'px';
+        if (w) box.style.minWidth = w + 'px';
 
         // Grab handle
         const handle = document.createElement('div');
@@ -743,6 +742,19 @@
         document.addEventListener('mouseup', onResizeUp);
     }, true);
 
+    function autoFitBox(table) {
+        const box = table.closest('.note-box');
+        if (!box) return;
+        // Clear fixed dimensions so box shrinks/grows to fit table
+        box.style.width = '';
+        box.style.height = '';
+        const content = box.querySelector('.note-content');
+        if (content) {
+            content.style.width = '';
+            content.style.height = '';
+        }
+    }
+
     function onResizeMove(e) {
         if (!resizing) return;
         if (resizing.type === 'col') {
@@ -763,9 +775,11 @@
                 }
             }
         }
+        autoFitBox(resizing.table);
     }
 
     function onResizeUp() {
+        if (resizing) autoFitBox(resizing.table);
         resizing = null;
         document.removeEventListener('mousemove', onResizeMove);
         document.removeEventListener('mouseup', onResizeUp);
@@ -841,6 +855,7 @@
                 break;
             }
         }
+        if (table.parentElement) autoFitBox(table);
         ctxTargetTd = null;
         scheduleSave();
     }
