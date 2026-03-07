@@ -64,6 +64,99 @@
             background: #fff;
         }
 
+        /* ── Main Area (sidebar + canvas) ── */
+        #main {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* ── Page Panel ── */
+        #pagePanel {
+            width: 200px;
+            background: #f0f0f0;
+            border-right: 1px solid #d0d0d0;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        #pagePanel .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px 8px;
+            border-bottom: 1px solid #d8d8d8;
+        }
+        #pagePanel .panel-header span {
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        #pagePanel .panel-header button {
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        #pagePanel .panel-header button:hover { background: #3a7bc8; }
+        #pageList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .page-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+            border-left: 3px solid transparent;
+        }
+        .page-item:hover { background: #e4e4e4; }
+        .page-item.active {
+            background: #dce8f5;
+            border-left-color: #4a90d9;
+            font-weight: 600;
+        }
+        .page-item .page-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .page-item .page-name[contenteditable="true"] {
+            background: #fff;
+            border: 1px solid #4a90d9;
+            border-radius: 2px;
+            padding: 0 4px;
+            outline: none;
+        }
+        .page-item .page-delete {
+            display: none;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 15px;
+            cursor: pointer;
+            padding: 0 2px;
+            margin-left: 4px;
+            line-height: 1;
+        }
+        .page-item:hover .page-delete { display: block; }
+        .page-item .page-delete:hover { color: #c44; }
+
         /* ── Canvas ── */
         #canvas {
             flex: 1;
@@ -358,17 +451,180 @@
     <div class="ctx-item" onclick="tableCtxAction('deleteTable')" style="color:#c44;">Delete Table</div>
 </div>
 
-<!-- Canvas -->
-<div id="canvas">
-    <div id="canvas-hint">Double-click anywhere to add a note</div>
+<!-- Main Area -->
+<div id="main">
+    <!-- Page Panel -->
+    <div id="pagePanel">
+        <div class="panel-header">
+            <span>Pages</span>
+            <button onclick="addPage()" title="Add Page">+</button>
+        </div>
+        <div id="pageList"></div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas">
+        <div id="canvas-hint">Double-click anywhere to add a note</div>
+    </div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'onenote_boxes';
-    let boxes = [];
+    const PAGES_KEY = 'onenote_pages';
+    const ACTIVE_KEY = 'onenote_active_page';
+    let pages = [];
+    let activePageId = null;
     let activeBox = null;
-    let nextId = 1;
+    let nextBoxId = 1;
     let saveTimer = null;
+
+    // ── Page Management ──
+    function loadPages() {
+        try {
+            pages = JSON.parse(localStorage.getItem(PAGES_KEY)) || [];
+        } catch { pages = []; }
+        // Migrate from old single-page format
+        if (pages.length === 0) {
+            try {
+                const old = JSON.parse(localStorage.getItem('onenote_boxes'));
+                if (old && Array.isArray(old) && old.length > 0) {
+                    pages = [{ id: 'page_1', name: 'Page 1', boxes: old }];
+                    localStorage.removeItem('onenote_boxes');
+                }
+            } catch {}
+        }
+        if (pages.length === 0) {
+            pages = [{ id: 'page_1', name: 'Page 1', boxes: [] }];
+        }
+        activePageId = localStorage.getItem(ACTIVE_KEY) || pages[0].id;
+        if (!pages.find(p => p.id === activePageId)) activePageId = pages[0].id;
+    }
+
+    function savePages() {
+        localStorage.setItem(PAGES_KEY, JSON.stringify(pages));
+        localStorage.setItem(ACTIVE_KEY, activePageId);
+    }
+
+    function addPage() {
+        const id = 'page_' + Date.now();
+        const num = pages.length + 1;
+        pages.push({ id: id, name: 'Page ' + num, boxes: [] });
+        savePages();
+        switchPage(id);
+        renderPageList();
+    }
+
+    function deletePage(id, e) {
+        e.stopPropagation();
+        if (pages.length <= 1) return; // keep at least one page
+        pages = pages.filter(p => p.id !== id);
+        if (activePageId === id) {
+            activePageId = pages[0].id;
+        }
+        savePages();
+        renderPageList();
+        loadCanvasForPage(activePageId);
+    }
+
+    function switchPage(id) {
+        // Save current canvas state before switching
+        saveCanvasToPage();
+        activePageId = id;
+        savePages();
+        renderPageList();
+        loadCanvasForPage(id);
+    }
+
+    function renderPageList() {
+        const list = document.getElementById('pageList');
+        list.innerHTML = '';
+        pages.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'page-item' + (p.id === activePageId ? ' active' : '');
+            item.addEventListener('click', () => switchPage(p.id));
+
+            const name = document.createElement('span');
+            name.className = 'page-name';
+            name.textContent = p.name;
+
+            // Double-click to rename
+            name.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                name.contentEditable = 'true';
+                name.focus();
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(name);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            });
+            name.addEventListener('blur', () => {
+                name.contentEditable = 'false';
+                const newName = name.textContent.trim();
+                if (newName) {
+                    p.name = newName;
+                    savePages();
+                }
+                renderPageList();
+            });
+            name.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+                if (e.key === 'Escape') { name.textContent = p.name; name.blur(); }
+            });
+
+            const del = document.createElement('button');
+            del.className = 'page-delete';
+            del.innerHTML = '&times;';
+            del.title = 'Delete page';
+            del.addEventListener('click', (e) => deletePage(p.id, e));
+
+            item.appendChild(name);
+            if (pages.length > 1) item.appendChild(del);
+            list.appendChild(item);
+        });
+    }
+
+    // ── Canvas ↔ Page ──
+    function saveCanvasToPage() {
+        const page = pages.find(p => p.id === activePageId);
+        if (!page) return;
+        const data = [];
+        document.querySelectorAll('.note-box').forEach(box => {
+            const content = box.querySelector('.note-content');
+            data.push({
+                id: box.dataset.id,
+                x: parseInt(box.style.left) || 0,
+                y: parseInt(box.style.top) || 0,
+                width: box.offsetWidth,
+                height: box.offsetHeight,
+                html: content.innerHTML
+            });
+        });
+        page.boxes = data;
+    }
+
+    function loadCanvasForPage(pageId) {
+        const canvas = document.getElementById('canvas');
+        // Remove existing note boxes
+        canvas.querySelectorAll('.note-box').forEach(b => b.remove());
+        activeBox = null;
+        nextBoxId = 1;
+
+        const page = pages.find(p => p.id === pageId);
+        if (!page) return;
+
+        let maxId = 0;
+        page.boxes.forEach(d => {
+            const numId = parseInt(d.id) || 0;
+            if (numId > maxId) maxId = numId;
+            createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
+        });
+        nextBoxId = maxId + 1;
+
+        // Show/hide hint
+        const hint = document.getElementById('canvas-hint');
+        if (hint) hint.style.display = page.boxes.length ? 'none' : '';
+    }
 
     // ── Formatting ──
     function fmt(command) {
@@ -449,7 +705,7 @@
     function createNoteBox(x, y, w, h, html, id) {
         const box = document.createElement('div');
         box.className = 'note-box';
-        box.dataset.id = id || nextId++;
+        box.dataset.id = id || nextBoxId++;
         box.style.left = x + 'px';
         box.style.top = y + 'px';
         if (w) box.style.minWidth = w + 'px';
@@ -467,7 +723,6 @@
         delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             box.remove();
-            boxes = boxes.filter(b => b.id !== box.dataset.id);
             if (activeBox === box) activeBox = null;
             scheduleSave();
             if (!document.querySelector('.note-box')) {
@@ -604,37 +859,10 @@
     // ── Persistence ──
     function scheduleSave() {
         clearTimeout(saveTimer);
-        saveTimer = setTimeout(saveAll, 300);
-    }
-
-    function saveAll() {
-        const data = [];
-        document.querySelectorAll('.note-box').forEach(box => {
-            const content = box.querySelector('.note-content');
-            data.push({
-                id: box.dataset.id,
-                x: parseInt(box.style.left) || 0,
-                y: parseInt(box.style.top) || 0,
-                width: box.offsetWidth,
-                height: box.offsetHeight,
-                html: content.innerHTML
-            });
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-
-    function loadAll() {
-        try {
-            const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-            if (!data || !Array.isArray(data)) return;
-            let maxId = 0;
-            data.forEach(d => {
-                const numId = parseInt(d.id) || 0;
-                if (numId > maxId) maxId = numId;
-                createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
-            });
-            nextId = maxId + 1;
-        } catch {}
+        saveTimer = setTimeout(() => {
+            saveCanvasToPage();
+            savePages();
+        }, 300);
     }
 
     // ── Paragraph Spacing ──
@@ -644,7 +872,6 @@
             popup.style.display = 'none';
             return;
         }
-        // Read current spacing from selection
         const sel = window.getSelection();
         let block = null;
         if (sel.rangeCount && sel.anchorNode) {
@@ -670,9 +897,7 @@
         if (!sel.rangeCount || !sel.anchorNode) { closeParaSpacing(); return; }
         const node = sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
         let block = node.closest('p, div.note-content, li, h1, h2, h3, h4, h5, h6');
-        // If we're directly in the contenteditable, wrap in a div
         if (block && block.classList.contains('note-content')) {
-            // Wrap current line content in a <p> so we can style it
             document.execCommand('formatBlock', false, 'p');
             const newNode = sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
             block = newNode.closest('p');
@@ -689,7 +914,7 @@
     let resizing = null;
 
     document.addEventListener('mousemove', (e) => {
-        if (resizing) return; // don't change cursor while dragging
+        if (resizing) return;
         const td = e.target.closest('td');
         if (!td) return;
         const rect = td.getBoundingClientRect();
@@ -729,7 +954,6 @@
             startHeight: td.offsetHeight
         };
 
-        // Set explicit widths on all cells in this column if resizing col
         if (nearRight) {
             for (const row of table.rows) {
                 if (row.cells[cellIndex]) {
@@ -745,7 +969,6 @@
     function autoFitBox(table) {
         const box = table.closest('.note-box');
         if (!box) return;
-        // Clear fixed dimensions so box shrinks/grows to fit table
         box.style.width = '';
         box.style.height = '';
         const content = box.querySelector('.note-content');
@@ -798,7 +1021,6 @@
         menu.style.display = 'block';
         menu.style.left = e.clientX + 'px';
         menu.style.top = e.clientY + 'px';
-        // Keep menu in viewport
         const mr = menu.getBoundingClientRect();
         if (mr.right > window.innerWidth) menu.style.left = (e.clientX - mr.width) + 'px';
         if (mr.bottom > window.innerHeight) menu.style.top = (e.clientY - mr.height) + 'px';
@@ -862,7 +1084,9 @@
 
     // ── Init ──
     buildTableGrid();
-    loadAll();
+    loadPages();
+    renderPageList();
+    loadCanvasForPage(activePageId);
 </script>
 </body>
 </html>
