@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f0e8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 16px;
+        }
+
+        .notepad {
+            background: #fffef9;
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid #d4c9a8;
+            border-radius: 4px;
+            box-shadow: 2px 3px 12px rgba(0,0,0,0.1);
+            padding: 0;
+            position: relative;
+        }
+
+        .notepad::before {
+            content: '';
+            position: absolute;
+            left: 48px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #f0c4c4;
+        }
+
+        .header {
+            padding: 20px 20px 12px 64px;
+            border-bottom: 1px solid #e8e0cc;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #3a3a3a;
+        }
+
+        .add-bar {
+            display: flex;
+            padding: 12px 20px 12px 64px;
+            border-bottom: 1px solid #e8e0cc;
+            gap: 8px;
+        }
+
+        .add-bar input {
+            flex: 1;
+            border: 1px solid #d4c9a8;
+            border-radius: 3px;
+            padding: 8px 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #fffef9;
+            color: #3a3a3a;
+            outline: none;
+        }
+
+        .add-bar input:focus {
+            border-color: #7a9ec2;
+        }
+
+        .add-bar button {
+            background: #7a9ec2;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .add-bar button:hover {
+            background: #6589aa;
+        }
+
+        .todo-list {
+            list-style: none;
+            min-height: 200px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px 10px 64px;
+            border-bottom: 1px solid #ece6d6;
+            background: linear-gradient(transparent 29px, #d6e4f0 29px, #d6e4f0 30px, transparent 30px);
+            background-size: 100% 30px;
+            min-height: 42px;
+        }
+
+        .todo-item:hover {
+            background-color: rgba(122, 158, 194, 0.06);
+        }
+
+        .todo-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .todo-item .text {
+            flex: 1;
+            font-size: 15px;
+            color: #3a3a3a;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .todo-item.done .text {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .todo-item .delete {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .todo-item .delete:hover {
+            color: #e55;
+        }
+
+        .footer {
+            padding: 12px 20px 12px 64px;
+            border-top: 1px solid #e8e0cc;
+            font-size: 12px;
+            color: #bbb;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer button {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .footer button:hover {
+            color: #e55;
+        }
+    </style>
+</head>
+<body>
+    <div class="notepad">
+        <div class="header">
+            <h1>To Do</h1>
+        </div>
+        <div class="add-bar">
+            <input type="text" id="newTask" placeholder="Add a new task..." autofocus>
+            <button onclick="addTask()">Add</button>
+        </div>
+        <ul class="todo-list" id="todoList"></ul>
+        <div class="footer">
+            <span id="countText">0 items</span>
+            <button onclick="clearDone()">Clear completed</button>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'todo_items';
+
+        function load() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch { return []; }
+        }
+
+        function save(items) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        }
+
+        function render() {
+            const items = load();
+            const list = document.getElementById('todoList');
+            list.innerHTML = '';
+
+            items.forEach((item, i) => {
+                const li = document.createElement('li');
+                li.className = 'todo-item' + (item.done ? ' done' : '');
+
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = item.done;
+                cb.onchange = () => toggle(i);
+
+                const span = document.createElement('span');
+                span.className = 'text';
+                span.textContent = item.text;
+
+                const del = document.createElement('button');
+                del.className = 'delete';
+                del.innerHTML = '&times;';
+                del.onclick = () => remove(i);
+
+                li.appendChild(cb);
+                li.appendChild(span);
+                li.appendChild(del);
+                list.appendChild(li);
+            });
+
+            const active = items.filter(i => !i.done).length;
+            document.getElementById('countText').textContent =
+                active + (active === 1 ? ' item' : ' items') + ' remaining';
+        }
+
+        function addTask() {
+            const input = document.getElementById('newTask');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const items = load();
+            items.push({ text, done: false });
+            save(items);
+            input.value = '';
+            render();
+        }
+
+        function toggle(index) {
+            const items = load();
+            items[index].done = !items[index].done;
+            save(items);
+            render();
+        }
+
+        function remove(index) {
+            const items = load();
+            items.splice(index, 1);
+            save(items);
+            render();
+        }
+
+        function clearDone() {
+            const items = load().filter(i => !i.done);
+            save(items);
+            render();
+        }
+
+        document.getElementById('newTask').addEventListener('keydown', e => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        render();
+    </script>
+</body>
+</html>
