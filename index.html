@@ -179,6 +179,88 @@
         }
         #pagePanel .panel-actions button:hover { background: #e8e8e8; }
 
+        /* ── Version History Panel ── */
+        #versionPanel {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 260px;
+            height: 100%;
+            background: #f7f7f7;
+            border-left: 1px solid #d0d0d0;
+            z-index: 500;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.08);
+        }
+        #versionPanel.open { display: flex; }
+        #versionPanel .vp-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid #d8d8d8;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+        #versionPanel .vp-header button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #888;
+            line-height: 1;
+        }
+        #versionPanel .vp-header button:hover { color: #333; }
+        #versionList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .version-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .version-item:hover { background: #e8e8e8; }
+        .version-item.active { background: #dce8f5; font-weight: 600; }
+        .version-item .v-time { flex: 1; }
+        .version-item .v-restore {
+            display: none;
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .version-item:hover .v-restore { display: block; }
+        .version-item .v-restore:hover { background: #3a7bc8; }
+        #versionPanel .vp-note {
+            padding: 8px 12px;
+            font-size: 11px;
+            color: #999;
+            border-top: 1px solid #ddd;
+        }
+        #pagePanel .panel-actions a {
+            display: block;
+            text-align: center;
+            font-size: 12px;
+            color: #4a90d9;
+            cursor: pointer;
+            margin-top: 6px;
+            text-decoration: none;
+        }
+        #pagePanel .panel-actions a:hover { text-decoration: underline; }
+
         /* ── Import toast ── */
         #importToast {
             display: none;
@@ -524,6 +606,7 @@
         <div class="panel-actions">
             <button onclick="document.getElementById('importFile').click()" title="Import OneNote HTML">Import .htm</button>
             <input type="file" id="importFile" accept=".htm,.html,.mht,.mhtml" style="display:none" onchange="importHTMLFile(event)">
+            <a onclick="toggleVersionPanel()">Previous Page Versions</a>
         </div>
         <div id="pageList"></div>
     </div>
@@ -531,6 +614,15 @@
     <!-- Canvas -->
     <div id="canvas">
         <div id="canvas-hint">Double-click anywhere to add a note</div>
+        <!-- Version History Panel -->
+        <div id="versionPanel">
+            <div class="vp-header">
+                <span>Page Versions</span>
+                <button onclick="toggleVersionPanel()">&times;</button>
+            </div>
+            <div id="versionList"></div>
+            <div class="vp-note">Click to preview, "Restore" to roll back</div>
+        </div>
     </div>
 </div>
 
@@ -592,12 +684,15 @@
     }
 
     function switchPage(id) {
-        // Save current canvas state before switching
+        // Save current canvas state and snapshot before switching
         saveCanvasToPage();
+        forceVersionSnapshot();
         activePageId = id;
         savePages();
         renderPageList();
         loadCanvasForPage(id);
+        // Close version panel when switching pages
+        document.getElementById('versionPanel').classList.remove('open');
     }
 
     function renderPageList() {
@@ -976,12 +1071,74 @@
     });
 
     // ── Persistence ──
+    const VERSIONS_KEY = 'onenote_versions';
+    const MAX_VERSIONS = 20;
+    let versionSnapshotTimer = null;
+
     function scheduleSave() {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
             saveCanvasToPage();
             savePages();
+            scheduleVersionSnapshot();
         }, 300);
+    }
+
+    function scheduleVersionSnapshot() {
+        // Debounce version snapshots to every 30 seconds of inactivity
+        clearTimeout(versionSnapshotTimer);
+        versionSnapshotTimer = setTimeout(() => {
+            saveVersionSnapshot();
+        }, 30000);
+    }
+
+    function getVersions() {
+        try {
+            return JSON.parse(localStorage.getItem(VERSIONS_KEY)) || {};
+        } catch { return {}; }
+    }
+
+    function saveVersionSnapshot() {
+        const page = pages.find(p => p.id === activePageId);
+        if (!page || page.boxes.length === 0) return;
+
+        const versions = getVersions();
+        if (!versions[activePageId]) versions[activePageId] = [];
+
+        const history = versions[activePageId];
+        const snapshot = JSON.stringify(page.boxes);
+
+        // Don't save if identical to last version
+        if (history.length > 0 && JSON.stringify(history[history.length - 1].boxes) === snapshot) return;
+
+        history.push({
+            timestamp: Date.now(),
+            boxes: JSON.parse(snapshot)
+        });
+
+        // Keep only the last MAX_VERSIONS
+        if (history.length > MAX_VERSIONS) {
+            history.splice(0, history.length - MAX_VERSIONS);
+        }
+
+        versions[activePageId] = history;
+        try {
+            localStorage.setItem(VERSIONS_KEY, JSON.stringify(versions));
+        } catch (e) {
+            // localStorage full — remove oldest versions across all pages
+            for (const pid in versions) {
+                if (versions[pid].length > 5) {
+                    versions[pid] = versions[pid].slice(-5);
+                }
+            }
+            try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(versions)); } catch {}
+        }
+    }
+
+    // Force a snapshot now (called on page switch)
+    function forceVersionSnapshot() {
+        clearTimeout(versionSnapshotTimer);
+        saveVersionSnapshot();
     }
 
     // ── Paragraph Spacing ──
@@ -1480,6 +1637,111 @@
             }
         }
     });
+
+    // ── Version History Panel ──
+    let previewingVersion = false;
+
+    function toggleVersionPanel() {
+        const panel = document.getElementById('versionPanel');
+        const isOpen = panel.classList.contains('open');
+        if (isOpen) {
+            panel.classList.remove('open');
+            // If previewing, restore current version
+            if (previewingVersion) {
+                loadCanvasForPage(activePageId);
+                previewingVersion = false;
+            }
+        } else {
+            // Snapshot current state before opening
+            saveCanvasToPage();
+            forceVersionSnapshot();
+            panel.classList.add('open');
+            renderVersionList();
+        }
+    }
+
+    function renderVersionList() {
+        const list = document.getElementById('versionList');
+        list.innerHTML = '';
+        const versions = getVersions();
+        const history = versions[activePageId] || [];
+
+        if (history.length === 0) {
+            list.innerHTML = '<div style="padding:12px;font-size:12px;color:#999;text-align:center;">No previous versions yet.<br>Versions are saved automatically.</div>';
+            return;
+        }
+
+        // Show newest first
+        for (let i = history.length - 1; i >= 0; i--) {
+            const v = history[i];
+            const item = document.createElement('div');
+            item.className = 'version-item';
+
+            const time = document.createElement('span');
+            time.className = 'v-time';
+            const d = new Date(v.timestamp);
+            time.textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const restore = document.createElement('button');
+            restore.className = 'v-restore';
+            restore.textContent = 'Restore';
+            restore.addEventListener('click', (e) => {
+                e.stopPropagation();
+                restoreVersion(i);
+            });
+
+            item.addEventListener('click', () => previewVersion(i, item));
+
+            item.appendChild(time);
+            item.appendChild(restore);
+            list.appendChild(item);
+        }
+    }
+
+    function previewVersion(index) {
+        const versions = getVersions();
+        const history = versions[activePageId] || [];
+        if (!history[index]) return;
+
+        previewingVersion = true;
+
+        // Load the snapshot onto the canvas (without saving it)
+        const canvas = document.getElementById('canvas');
+        canvas.querySelectorAll('.note-box').forEach(b => b.remove());
+        activeBox = null;
+
+        history[index].boxes.forEach(d => {
+            createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
+        });
+
+        // Highlight active version item
+        document.querySelectorAll('.version-item').forEach(el => el.classList.remove('active'));
+        const items = document.querySelectorAll('.version-item');
+        const reverseIdx = (history.length - 1) - index;
+        if (items[reverseIdx]) items[reverseIdx].classList.add('active');
+    }
+
+    function restoreVersion(index) {
+        const versions = getVersions();
+        const history = versions[activePageId] || [];
+        if (!history[index]) return;
+
+        // Save current as a version before restoring
+        saveCanvasToPage();
+        forceVersionSnapshot();
+
+        // Apply the old version
+        const page = pages.find(p => p.id === activePageId);
+        if (page) {
+            page.boxes = JSON.parse(JSON.stringify(history[index].boxes));
+            savePages();
+        }
+
+        previewingVersion = false;
+        loadCanvasForPage(activePageId);
+        document.getElementById('versionPanel').classList.remove('open');
+        showToast('Page restored to previous version');
+    }
 
     // ── Init ──
     buildTableGrid();
