@@ -272,6 +272,14 @@
             min-width: 140px;
             min-height: 40px;
         }
+        .note-box.grabbed .note-content {
+            background: #f0f0f0;
+            cursor: default;
+            user-select: none;
+        }
+        .note-box.grabbed .note-content * {
+            cursor: default;
+        }
         .note-box .note-content table {
             border-collapse: collapse;
             margin: 4px 0;
@@ -798,8 +806,22 @@
         if (html) content.innerHTML = html;
 
         content.addEventListener('input', () => scheduleSave());
-        content.addEventListener('focus', () => selectBox(box));
-        content.addEventListener('mousedown', (e) => e.stopPropagation());
+        content.addEventListener('focus', () => {
+            if (!box.classList.contains('grabbed')) selectBox(box);
+        });
+        content.addEventListener('mousedown', (e) => {
+            if (box.classList.contains('grabbed')) {
+                e.preventDefault(); // prevent focus when grabbed
+            }
+            e.stopPropagation();
+        });
+        // Double-click content to enter edit mode
+        content.addEventListener('dblclick', (e) => {
+            if (box.classList.contains('grabbed')) {
+                e.stopPropagation();
+                editBox(box);
+            }
+        });
 
         // Tab key in tables
         content.addEventListener('keydown', (e) => {
@@ -841,9 +863,30 @@
     function selectBox(box) {
         if (activeBox && activeBox !== box) {
             activeBox.classList.remove('selected');
+            activeBox.classList.remove('grabbed');
+            const oldContent = activeBox.querySelector('.note-content');
+            if (oldContent) oldContent.contentEditable = 'true';
         }
         box.classList.add('selected');
         activeBox = box;
+    }
+
+    function grabBox(box) {
+        selectBox(box);
+        box.classList.add('grabbed');
+        const content = box.querySelector('.note-content');
+        content.contentEditable = 'false';
+        // Remove cursor / blur
+        window.getSelection().removeAllRanges();
+        content.blur();
+    }
+
+    function editBox(box) {
+        selectBox(box);
+        box.classList.remove('grabbed');
+        const content = box.querySelector('.note-content');
+        content.contentEditable = 'true';
+        content.focus();
     }
 
     // ── Drag ──
@@ -858,7 +901,7 @@
             startY = e.clientY;
             origX = parseInt(box.style.left) || 0;
             origY = parseInt(box.style.top) || 0;
-            selectBox(box);
+            grabBox(box);
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
         });
@@ -896,6 +939,9 @@
         if (!e.target.closest('.note-box') && !e.target.closest('#toolbar') && !e.target.closest('#tablePicker')) {
             if (activeBox) {
                 activeBox.classList.remove('selected');
+                activeBox.classList.remove('grabbed');
+                const c = activeBox.querySelector('.note-content');
+                if (c) c.contentEditable = 'true';
                 activeBox = null;
             }
         }
