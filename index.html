@@ -3,267 +3,490 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Do</title>
+    <title>Notes</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: #f5f0e8;
-            min-height: 100vh;
+            overflow: hidden;
+            height: 100vh;
             display: flex;
-            justify-content: center;
-            padding: 40px 16px;
+            flex-direction: column;
         }
 
-        .notepad {
-            background: #fffef9;
-            width: 100%;
-            max-width: 600px;
-            border: 1px solid #d4c9a8;
-            border-radius: 4px;
-            box-shadow: 2px 3px 12px rgba(0,0,0,0.1);
-            padding: 0;
-            position: relative;
-        }
-
-        .notepad::before {
-            content: '';
-            position: absolute;
-            left: 48px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #f0c4c4;
-        }
-
-        .header {
-            padding: 20px 20px 12px 64px;
-            border-bottom: 1px solid #e8e0cc;
-        }
-
-        .header h1 {
-            font-size: 22px;
-            font-weight: 600;
-            color: #3a3a3a;
-        }
-
-        .add-bar {
-            display: flex;
-            padding: 12px 20px 12px 64px;
-            border-bottom: 1px solid #e8e0cc;
-            gap: 8px;
-        }
-
-        .add-bar input {
-            flex: 1;
-            border: 1px solid #d4c9a8;
-            border-radius: 3px;
-            padding: 8px 12px;
-            font-size: 15px;
-            font-family: inherit;
-            background: #fffef9;
-            color: #3a3a3a;
-            outline: none;
-        }
-
-        .add-bar input:focus {
-            border-color: #7a9ec2;
-        }
-
-        .add-bar button {
-            background: #7a9ec2;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .add-bar button:hover {
-            background: #6589aa;
-        }
-
-        .todo-list {
-            list-style: none;
-            min-height: 200px;
-        }
-
-        .todo-item {
+        /* ── Toolbar ── */
+        #toolbar {
             display: flex;
             align-items: center;
-            padding: 10px 20px 10px 64px;
-            border-bottom: 1px solid #ece6d6;
-            background: linear-gradient(transparent 29px, #d6e4f0 29px, #d6e4f0 30px, transparent 30px);
-            background-size: 100% 30px;
-            min-height: 42px;
+            gap: 4px;
+            padding: 6px 12px;
+            background: #f3f3f3;
+            border-bottom: 1px solid #d0d0d0;
+            flex-wrap: wrap;
+            user-select: none;
+            z-index: 1000;
         }
-
-        .todo-item:hover {
-            background-color: rgba(122, 158, 194, 0.06);
+        #toolbar .sep {
+            width: 1px;
+            height: 24px;
+            background: #ccc;
+            margin: 0 4px;
         }
-
-        .todo-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            margin-right: 12px;
+        #toolbar button {
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 13px;
             cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .todo-item .text {
-            flex: 1;
-            font-size: 15px;
-            color: #3a3a3a;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        .todo-item.done .text {
-            text-decoration: line-through;
-            color: #aaa;
-        }
-
-        .todo-item .delete {
-            background: none;
-            border: none;
-            color: #ccc;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 4px;
-            margin-left: 8px;
-            flex-shrink: 0;
-        }
-
-        .todo-item .delete:hover {
-            color: #e55;
-        }
-
-        .footer {
-            padding: 12px 20px 12px 64px;
-            border-top: 1px solid #e8e0cc;
-            font-size: 12px;
-            color: #bbb;
+            font-family: inherit;
+            min-width: 28px;
+            height: 28px;
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            justify-content: center;
         }
-
-        .footer button {
-            background: none;
-            border: none;
-            color: #aaa;
+        #toolbar button:hover { background: #e8e8e8; }
+        #toolbar button.active { background: #d0d8e8; border-color: #8899bb; }
+        #toolbar select, #toolbar input[type="color"] {
+            height: 28px;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
+            font-size: 13px;
             cursor: pointer;
-            font-size: 12px;
             font-family: inherit;
         }
+        #toolbar select { padding: 2px 4px; }
+        #toolbar input[type="color"] {
+            width: 32px;
+            padding: 1px;
+            background: #fff;
+        }
 
-        .footer button:hover {
-            color: #e55;
+        /* ── Canvas ── */
+        #canvas {
+            flex: 1;
+            position: relative;
+            background: #fff;
+            overflow: auto;
+        }
+
+        /* ── Text Boxes ── */
+        .note-box {
+            position: absolute;
+            min-width: 160px;
+            min-height: 60px;
+            background: #fff;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+        .note-box.selected {
+            border-color: #4a90d9;
+            z-index: 10;
+        }
+        .note-box .grab-handle {
+            height: 14px;
+            cursor: move;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2px;
+            flex-shrink: 0;
+        }
+        .note-box.selected .grab-handle {
+            background: #4a90d9;
+        }
+        .note-box .grab-handle .dots {
+            font-size: 9px;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+        .note-box.selected .grab-handle .dots {
+            color: rgba(255,255,255,0.7);
+        }
+        .note-box .delete-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 3px;
+        }
+        .note-box.selected .delete-btn { display: block; }
+        .note-box .note-content {
+            flex: 1;
+            padding: 6px 8px;
+            outline: none;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow: auto;
+            resize: both;
+            min-width: 140px;
+            min-height: 40px;
+        }
+        .note-box .note-content table {
+            border-collapse: collapse;
+            margin: 4px 0;
+        }
+        .note-box .note-content td {
+            border: 1px solid #bbb;
+            padding: 4px 8px;
+            min-width: 50px;
+            vertical-align: top;
+        }
+        .note-box .note-content ul,
+        .note-box .note-content ol {
+            padding-left: 24px;
+            margin: 2px 0;
+        }
+
+        /* ── Table Picker ── */
+        #tablePicker {
+            display: none;
+            position: absolute;
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 2000;
+        }
+        #tablePicker .picker-label {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        #tableGrid {
+            display: grid;
+            grid-template-columns: repeat(8, 20px);
+            grid-template-rows: repeat(6, 20px);
+            gap: 2px;
+        }
+        #tableGrid .cell {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+        }
+        #tableGrid .cell.highlight {
+            background: #cde;
+            border-color: #8ab;
         }
     </style>
 </head>
 <body>
-    <div class="notepad">
-        <div class="header">
-            <h1>To Do</h1>
-        </div>
-        <div class="add-bar">
-            <input type="text" id="newTask" placeholder="Add a new task..." autofocus>
-            <button onclick="addTask()">Add</button>
-        </div>
-        <ul class="todo-list" id="todoList"></ul>
-        <div class="footer">
-            <span id="countText">0 items</span>
-            <button onclick="clearDone()">Clear completed</button>
-        </div>
-    </div>
 
-    <script>
-        const STORAGE_KEY = 'todo_items';
+<!-- Toolbar -->
+<div id="toolbar">
+    <button onclick="fmt('bold')" title="Bold" id="btnBold"><b>B</b></button>
+    <button onclick="fmt('italic')" title="Italic" id="btnItalic"><i>I</i></button>
+    <button onclick="fmt('underline')" title="Underline" id="btnUnderline"><u>U</u></button>
+    <div class="sep"></div>
+    <select id="fontSize" onchange="applyFontSize()" title="Font Size">
+        <option value="">Size</option>
+        <option value="1">10</option>
+        <option value="2">12</option>
+        <option value="3">14</option>
+        <option value="4">16</option>
+        <option value="5">18</option>
+        <option value="6">24</option>
+        <option value="7">32</option>
+    </select>
+    <input type="color" id="fontColor" value="#000000" onchange="applyFontColor()" title="Text Color">
+    <div class="sep"></div>
+    <button onclick="fmt('justifyLeft')" title="Align Left">&#8676;</button>
+    <button onclick="fmt('justifyCenter')" title="Align Center">&#8596;</button>
+    <button onclick="fmt('justifyRight')" title="Align Right">&#8677;</button>
+    <div class="sep"></div>
+    <button onclick="fmt('insertUnorderedList')" title="Bullet List">&#8226; List</button>
+    <button onclick="fmt('insertOrderedList')" title="Numbered List">1. List</button>
+    <div class="sep"></div>
+    <button onclick="toggleTablePicker(event)" title="Insert Table" id="btnTable">Table</button>
+</div>
 
-        function load() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-            } catch { return []; }
+<!-- Table Picker Popup -->
+<div id="tablePicker">
+    <div class="picker-label" id="pickerLabel">Select size</div>
+    <div id="tableGrid"></div>
+</div>
+
+<!-- Canvas -->
+<div id="canvas"></div>
+
+<script>
+    const STORAGE_KEY = 'onenote_boxes';
+    let boxes = [];
+    let activeBox = null;
+    let nextId = 1;
+    let saveTimer = null;
+
+    // ── Formatting ──
+    function fmt(command) {
+        document.execCommand(command, false, null);
+        scheduleSave();
+    }
+
+    function applyFontSize() {
+        const sel = document.getElementById('fontSize');
+        if (sel.value) {
+            document.execCommand('fontSize', false, sel.value);
+            scheduleSave();
         }
+        sel.value = '';
+    }
 
-        function save(items) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    function applyFontColor() {
+        document.execCommand('foreColor', false, document.getElementById('fontColor').value);
+        scheduleSave();
+    }
+
+    // ── Table Picker ──
+    function buildTableGrid() {
+        const grid = document.getElementById('tableGrid');
+        grid.innerHTML = '';
+        for (let r = 0; r < 6; r++) {
+            for (let c = 0; c < 8; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.row = r + 1;
+                cell.dataset.col = c + 1;
+                cell.addEventListener('mouseenter', () => highlightGrid(r + 1, c + 1));
+                cell.addEventListener('click', () => insertTable(r + 1, c + 1));
+                grid.appendChild(cell);
+            }
         }
+    }
 
-        function render() {
-            const items = load();
-            const list = document.getElementById('todoList');
-            list.innerHTML = '';
+    function highlightGrid(rows, cols) {
+        document.getElementById('pickerLabel').textContent = rows + ' x ' + cols;
+        document.querySelectorAll('#tableGrid .cell').forEach(c => {
+            const cr = +c.dataset.row, cc = +c.dataset.col;
+            c.classList.toggle('highlight', cr <= rows && cc <= cols);
+        });
+    }
 
-            items.forEach((item, i) => {
-                const li = document.createElement('li');
-                li.className = 'todo-item' + (item.done ? ' done' : '');
-
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.checked = item.done;
-                cb.onchange = () => toggle(i);
-
-                const span = document.createElement('span');
-                span.className = 'text';
-                span.textContent = item.text;
-
-                const del = document.createElement('button');
-                del.className = 'delete';
-                del.innerHTML = '&times;';
-                del.onclick = () => remove(i);
-
-                li.appendChild(cb);
-                li.appendChild(span);
-                li.appendChild(del);
-                list.appendChild(li);
-            });
-
-            const active = items.filter(i => !i.done).length;
-            document.getElementById('countText').textContent =
-                active + (active === 1 ? ' item' : ' items') + ' remaining';
+    function toggleTablePicker(e) {
+        const picker = document.getElementById('tablePicker');
+        if (picker.style.display === 'block') {
+            picker.style.display = 'none';
+            return;
         }
+        const btn = e.currentTarget.getBoundingClientRect();
+        picker.style.display = 'block';
+        picker.style.left = btn.left + 'px';
+        picker.style.top = btn.bottom + 4 + 'px';
+    }
 
-        function addTask() {
-            const input = document.getElementById('newTask');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const items = load();
-            items.push({ text, done: false });
-            save(items);
-            input.value = '';
-            render();
+    function insertTable(rows, cols) {
+        document.getElementById('tablePicker').style.display = 'none';
+        if (!activeBox) return;
+        const content = activeBox.querySelector('.note-content');
+        let html = '<table>';
+        for (let r = 0; r < rows; r++) {
+            html += '<tr>';
+            for (let c = 0; c < cols; c++) {
+                html += '<td><br></td>';
+            }
+            html += '</tr>';
         }
+        html += '</table><br>';
+        content.focus();
+        document.execCommand('insertHTML', false, html);
+        scheduleSave();
+    }
 
-        function toggle(index) {
-            const items = load();
-            items[index].done = !items[index].done;
-            save(items);
-            render();
-        }
+    // ── Text Box Creation ──
+    function createNoteBox(x, y, w, h, html, id) {
+        const box = document.createElement('div');
+        box.className = 'note-box';
+        box.dataset.id = id || nextId++;
+        box.style.left = x + 'px';
+        box.style.top = y + 'px';
+        if (w) box.style.width = w + 'px';
+        if (h) box.style.height = h + 'px';
 
-        function remove(index) {
-            const items = load();
-            items.splice(index, 1);
-            save(items);
-            render();
-        }
+        // Grab handle
+        const handle = document.createElement('div');
+        handle.className = 'grab-handle';
+        const dots = document.createElement('span');
+        dots.className = 'dots';
+        dots.textContent = '\u2022\u2022\u2022';
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            box.remove();
+            boxes = boxes.filter(b => b.id !== box.dataset.id);
+            if (activeBox === box) activeBox = null;
+            scheduleSave();
+        });
+        handle.appendChild(dots);
+        handle.appendChild(delBtn);
 
-        function clearDone() {
-            const items = load().filter(i => !i.done);
-            save(items);
-            render();
-        }
+        // Content area
+        const content = document.createElement('div');
+        content.className = 'note-content';
+        content.contentEditable = 'true';
+        if (html) content.innerHTML = html;
 
-        document.getElementById('newTask').addEventListener('keydown', e => {
-            if (e.key === 'Enter') addTask();
+        content.addEventListener('input', () => scheduleSave());
+        content.addEventListener('focus', () => selectBox(box));
+        content.addEventListener('mousedown', (e) => e.stopPropagation());
+
+        // Tab key in tables
+        content.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                const sel = window.getSelection();
+                const td = sel.anchorNode ? sel.anchorNode.closest ? sel.anchorNode.closest('td') : sel.anchorNode.parentElement.closest('td') : null;
+                if (td) {
+                    e.preventDefault();
+                    const cells = Array.from(content.querySelectorAll('td'));
+                    const idx = cells.indexOf(td);
+                    const next = e.shiftKey ? cells[idx - 1] : cells[idx + 1];
+                    if (next) {
+                        const range = document.createRange();
+                        range.selectNodeContents(next);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+            }
         });
 
-        render();
-    </script>
+        box.appendChild(handle);
+        box.appendChild(content);
+
+        // Select on click
+        box.addEventListener('mousedown', (e) => {
+            selectBox(box);
+        });
+
+        // Drag via handle
+        initDrag(handle, box);
+
+        document.getElementById('canvas').appendChild(box);
+        return box;
+    }
+
+    function selectBox(box) {
+        if (activeBox && activeBox !== box) {
+            activeBox.classList.remove('selected');
+        }
+        box.classList.add('selected');
+        activeBox = box;
+    }
+
+    // ── Drag ──
+    function initDrag(handle, box) {
+        let dragging = false, startX, startY, origX, origY;
+
+        handle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            origX = parseInt(box.style.left) || 0;
+            origY = parseInt(box.style.top) || 0;
+            selectBox(box);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        function onMove(e) {
+            if (!dragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            box.style.left = Math.max(0, origX + dx) + 'px';
+            box.style.top = Math.max(0, origY + dy) + 'px';
+        }
+
+        function onUp() {
+            dragging = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            scheduleSave();
+        }
+    }
+
+    // ── Canvas double-click ──
+    document.getElementById('canvas').addEventListener('dblclick', (e) => {
+        if (e.target.closest('.note-box')) return;
+        const canvas = document.getElementById('canvas');
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left + canvas.scrollLeft;
+        const y = e.clientY - rect.top + canvas.scrollTop;
+        const box = createNoteBox(x - 10, y - 10, 280, null, '');
+        selectBox(box);
+        box.querySelector('.note-content').focus();
+    });
+
+    // Deselect when clicking empty canvas
+    document.getElementById('canvas').addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.note-box') && !e.target.closest('#toolbar') && !e.target.closest('#tablePicker')) {
+            if (activeBox) {
+                activeBox.classList.remove('selected');
+                activeBox = null;
+            }
+        }
+    });
+
+    // Close table picker on outside click
+    document.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('#tablePicker') && !e.target.closest('#btnTable')) {
+            document.getElementById('tablePicker').style.display = 'none';
+        }
+    });
+
+    // ── Persistence ──
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveAll, 300);
+    }
+
+    function saveAll() {
+        const data = [];
+        document.querySelectorAll('.note-box').forEach(box => {
+            const content = box.querySelector('.note-content');
+            data.push({
+                id: box.dataset.id,
+                x: parseInt(box.style.left) || 0,
+                y: parseInt(box.style.top) || 0,
+                width: box.offsetWidth,
+                height: box.offsetHeight,
+                html: content.innerHTML
+            });
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadAll() {
+        try {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            if (!data || !Array.isArray(data)) return;
+            let maxId = 0;
+            data.forEach(d => {
+                const numId = parseInt(d.id) || 0;
+                if (numId > maxId) maxId = numId;
+                createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
+            });
+            nextId = maxId + 1;
+        } catch {}
+    }
+
+    // ── Init ──
+    buildTableGrid();
+    loadAll();
+</script>
 </body>
 </html>
