@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notes</title>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -347,6 +350,39 @@
             cursor: pointer;
         }
         .lock-box .lock-secondary:hover { color: #333; }
+
+        /* ── Sign In Screen ── */
+        #signInScreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #2c3e50;
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        #signInScreen.show { display: flex; }
+        .signin-divider {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            color: #aaa;
+            font-size: 12px;
+        }
+        .signin-divider::before, .signin-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+        .signin-divider::before { margin-right: 8px; }
+        .signin-divider::after { margin-left: 8px; }
+        .sync-status {
+            font-size: 11px;
+            color: #888;
+            padding: 0 4px;
+            white-space: nowrap;
+        }
 
         /* ── Settings Modal ── */
         #settingsOverlay {
@@ -734,6 +770,7 @@
     <button onclick="document.getElementById('imgFile').click()" title="Insert Image">Image</button>
     <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
     <div style="flex:1"></div>
+    <span class="sync-status" id="syncStatus"></span>
     <button onclick="toggleVersionPanel()" title="Previous Page Versions" id="btnVersions">Versions</button>
     <button onclick="openSettings()" title="Settings">Settings</button>
     <button onclick="lockApp()" title="Lock Now">Lock</button>
@@ -792,6 +829,13 @@
     </div>
 </div>
 
+<!-- Sign In Screen -->
+<div id="signInScreen">
+    <div class="lock-box" id="signInBox">
+        <!-- Dynamic: sign-in or sign-up form -->
+    </div>
+</div>
+
 <!-- Settings Modal -->
 <div id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
     <div class="settings-box">
@@ -817,6 +861,10 @@
         </div>
         <div class="s-danger">
             <button onclick="removeEncryption()">Remove password and encryption...</button>
+        </div>
+        <div class="s-danger" id="settingsAccountSection" style="display:none;">
+            <div style="font-size:12px;color:#888;margin-bottom:6px;" id="settingsAccountEmail"></div>
+            <button onclick="firebaseSignOut()">Sign out and clear local data...</button>
         </div>
     </div>
 </div>
@@ -871,7 +919,7 @@
     function getSettings() {
         try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; }
     }
-    function putSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+    function putSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); syncToCloud(); }
 
     async function deriveKey(password, salt) {
         const enc = new TextEncoder();
@@ -964,6 +1012,7 @@
         localStorage.setItem(VERIFY_KEY, verify);
 
         document.getElementById('lockScreen').classList.remove('show');
+        syncToCloud();
         startApp();
         resetLockTimer();
     }
@@ -1037,6 +1086,7 @@
         // Remove plaintext keys
         localStorage.removeItem('onenote_pages');
         localStorage.removeItem('onenote_active_page');
+        syncToCloud();
     }
 
     async function decryptAndLoad() {
@@ -1059,6 +1109,15 @@
         document.getElementById('settingsNewPw').value = '';
         document.getElementById('settingsNewPw2').value = '';
         document.getElementById('settingsPwError').textContent = '';
+        // Update account section
+        const acctSection = document.getElementById('settingsAccountSection');
+        const acctEmail = document.getElementById('settingsAccountEmail');
+        if (firebaseUser) {
+            acctSection.style.display = '';
+            acctEmail.textContent = 'Signed in as: ' + firebaseUser.email;
+        } else {
+            acctSection.style.display = 'none';
+        }
         document.getElementById('settingsOverlay').classList.add('show');
     }
 
@@ -1134,6 +1193,7 @@
         localStorage.removeItem(SALT_KEY);
         cryptoKey = null;
         clearTimeout(lockTimeout);
+        syncToCloud();
         closeSettings();
         showToast('Encryption removed');
     }
@@ -1190,10 +1250,11 @@
 
     function savePages() {
         if (cryptoKey) {
-            encryptAndSave();
+            encryptAndSave(); // encryptAndSave calls syncToCloud
         } else {
             localStorage.setItem(PAGES_KEY, JSON.stringify(pages));
             localStorage.setItem(ACTIVE_KEY, activePageId);
+            syncToCloud();
         }
     }
 
@@ -1673,6 +1734,7 @@
         versions[activePageId] = history;
         try {
             localStorage.setItem(VERSIONS_KEY, JSON.stringify(versions));
+            syncToCloud();
         } catch (e) {
             // localStorage full — remove oldest versions across all pages
             for (const pid in versions) {
@@ -2304,19 +2366,188 @@
         }
     }
 
-    // ── Init ──
-    buildTableGrid();
-    if (isEncrypted()) {
-        showLockScreen();
-    } else {
-        // No encryption — check if first visit to offer setup
-        const hasData = localStorage.getItem(PAGES_KEY) || localStorage.getItem('onenote_boxes');
-        if (!hasData) {
-            showLockScreen(); // offer to set up password
-        } else {
-            startApp(); // existing unencrypted data, just load
+    // ── Firebase Cloud Sync ──
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDpOMSGLIZXm1o0GE13NAe6fctMWC-khRk",
+        authDomain: "my-notes-63ce0.firebaseapp.com",
+        databaseURL: "https://my-notes-63ce0-default-rtdb.firebaseio.com",
+        projectId: "my-notes-63ce0",
+        storageBucket: "my-notes-63ce0.firebasestorage.app",
+        messagingSenderId: "890920806003",
+        appId: "1:890920806003:web:d9bcb77be35a3a9f09ec06"
+    };
+
+    let firebaseUser = null;
+    let cloudSyncTimer = null;
+    let firebaseConfigured = false;
+
+    function initFirebase() {
+        firebaseConfigured = FIREBASE_CONFIG.apiKey !== 'AIzaSyDummyKeyReplaceMeWithYourKey'
+            && FIREBASE_CONFIG.projectId !== 'YOUR_PROJECT';
+        if (!firebaseConfigured) {
+            // Firebase not configured — run in local-only mode
+            onAuthReady(null);
+            return;
+        }
+        firebase.initializeApp(FIREBASE_CONFIG);
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                firebaseUser = user;
+                syncFromCloud().then(() => {
+                    document.getElementById('signInScreen').classList.remove('show');
+                    onAuthReady(user);
+                });
+            } else {
+                firebaseUser = null;
+                showSignInScreen();
+            }
+        });
+    }
+
+    function showSignInScreen() {
+        const screen = document.getElementById('signInScreen');
+        const box = document.getElementById('signInBox');
+        screen.classList.add('show');
+        box.innerHTML = `
+            <h2>Sign In</h2>
+            <p>Sign in to sync notes across devices</p>
+            <input type="email" id="authEmail" placeholder="Email" autofocus>
+            <input type="password" id="authPassword" placeholder="Password">
+            <div class="lock-error" id="authError"></div>
+            <button onclick="firebaseSignIn()">Sign In</button>
+            <button onclick="firebaseSignUp()" style="background:#5cb85c;border-color:#5cb85c;">Create Account</button>
+            <button class="lock-secondary" onclick="skipSignIn()">Use offline (this device only)</button>
+        `;
+        setTimeout(() => { const el = document.getElementById('authEmail'); if (el) el.focus(); }, 50);
+        box.onkeydown = function(e) {
+            if (e.key === 'Enter') firebaseSignIn();
+        };
+    }
+
+    async function firebaseSignIn() {
+        const email = document.getElementById('authEmail').value;
+        const pw = document.getElementById('authPassword').value;
+        const err = document.getElementById('authError');
+        if (!email || !pw) { err.textContent = 'Enter email and password'; return; }
+        err.textContent = 'Signing in...';
+        try {
+            await firebase.auth().signInWithEmailAndPassword(email, pw);
+        } catch (e) {
+            err.textContent = e.message.replace('Firebase: ', '').replace(/\(auth\/[^)]*\)\.?/, '').trim() || 'Sign-in failed';
         }
     }
+
+    async function firebaseSignUp() {
+        const email = document.getElementById('authEmail').value;
+        const pw = document.getElementById('authPassword').value;
+        const err = document.getElementById('authError');
+        if (!email) { err.textContent = 'Enter an email address'; return; }
+        if (!pw || pw.length < 6) { err.textContent = 'Password must be at least 6 characters'; return; }
+        err.textContent = 'Creating account...';
+        try {
+            await firebase.auth().createUserWithEmailAndPassword(email, pw);
+        } catch (e) {
+            err.textContent = e.message.replace('Firebase: ', '').replace(/\(auth\/[^)]*\)\.?/, '').trim() || 'Sign-up failed';
+        }
+    }
+
+    function skipSignIn() {
+        document.getElementById('signInScreen').classList.remove('show');
+        onAuthReady(null);
+    }
+
+    function firebaseSignOut() {
+        if (!confirm('Sign out? Local data will be cleared.')) return;
+        if (firebaseConfigured && firebase.apps.length) {
+            firebase.auth().signOut();
+        }
+        firebaseUser = null;
+        localStorage.clear();
+        location.reload();
+    }
+
+    async function syncFromCloud() {
+        if (!firebaseUser) return;
+        const statusEl = document.getElementById('syncStatus');
+        statusEl.textContent = 'Syncing...';
+        try {
+            const snap = await firebase.database().ref('users/' + firebaseUser.uid).once('value');
+            const data = snap.val();
+            if (!data) {
+                // No cloud data — upload local data if any
+                await doCloudUpload();
+                statusEl.textContent = 'Synced';
+                return;
+            }
+            // Download cloud data to localStorage
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY];
+            keys.forEach(key => {
+                if (data[key] !== undefined && data[key] !== null) {
+                    localStorage.setItem(key, data[key]);
+                } else {
+                    localStorage.removeItem(key);
+                }
+            });
+            statusEl.textContent = 'Synced';
+        } catch (e) {
+            console.warn('Cloud sync download failed:', e);
+            statusEl.textContent = 'Sync error';
+        }
+    }
+
+    function syncToCloud() {
+        if (!firebaseUser) return;
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = setTimeout(() => doCloudUpload(), 2000);
+    }
+
+    async function doCloudUpload() {
+        if (!firebaseUser) return;
+        const statusEl = document.getElementById('syncStatus');
+        statusEl.textContent = 'Saving...';
+        try {
+            const data = {};
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY];
+            keys.forEach(key => {
+                const val = localStorage.getItem(key);
+                if (val !== null) data[key] = val;
+            });
+            data._lastModified = Date.now();
+            await firebase.database().ref('users/' + firebaseUser.uid).set(data);
+            statusEl.textContent = 'Saved';
+            setTimeout(() => { if (statusEl.textContent === 'Saved') statusEl.textContent = ''; }, 3000);
+        } catch (e) {
+            console.warn('Cloud save failed:', e);
+            statusEl.textContent = 'Save error';
+        }
+    }
+
+    function onAuthReady(user) {
+        // Update settings UI
+        const acctSection = document.getElementById('settingsAccountSection');
+        const acctEmail = document.getElementById('settingsAccountEmail');
+        if (user) {
+            acctSection.style.display = '';
+            acctEmail.textContent = 'Signed in as: ' + user.email;
+        } else {
+            acctSection.style.display = 'none';
+        }
+        // Proceed with existing encryption flow
+        if (isEncrypted()) {
+            showLockScreen();
+        } else {
+            const hasData = localStorage.getItem(PAGES_KEY) || localStorage.getItem('onenote_boxes');
+            if (!hasData) {
+                showLockScreen(); // offer to set up password
+            } else {
+                startApp(); // existing unencrypted data, just load
+            }
+        }
+    }
+
+    // ── Init ──
+    buildTableGrid();
+    initFirebase();
 </script>
 </body>
 </html>
