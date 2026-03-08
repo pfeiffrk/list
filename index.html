@@ -2536,12 +2536,7 @@
         if (isEncrypted()) {
             showLockScreen();
         } else {
-            const hasData = localStorage.getItem(PAGES_KEY) || localStorage.getItem('onenote_boxes');
-            if (!hasData) {
-                showLockScreen(); // offer to set up password
-            } else {
-                startApp(); // existing unencrypted data, just load
-            }
+            startApp(); // no encryption — go straight to app
         }
     }
 
