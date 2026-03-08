@@ -2417,11 +2417,26 @@
             <button onclick="firebaseSignIn()">Sign In</button>
             <button onclick="firebaseSignUp()" style="background:#5cb85c;border-color:#5cb85c;">Create Account</button>
             <button class="lock-secondary" onclick="skipSignIn()">Use offline (this device only)</button>
+            <button class="lock-secondary" onclick="firebaseForgotPassword()">Forgot password?</button>
         `;
         setTimeout(() => { const el = document.getElementById('authEmail'); if (el) el.focus(); }, 50);
         box.onkeydown = function(e) {
             if (e.key === 'Enter') firebaseSignIn();
         };
+    }
+
+    async function firebaseForgotPassword() {
+        const email = document.getElementById('authEmail').value;
+        const err = document.getElementById('authError');
+        if (!email) { err.textContent = 'Enter your email address first'; return; }
+        try {
+            await firebase.auth().sendPasswordResetEmail(email);
+            err.style.color = '#5cb85c';
+            err.textContent = 'Password reset email sent — check your inbox';
+            setTimeout(() => { err.style.color = ''; }, 5000);
+        } catch (e) {
+            err.textContent = e.message.replace('Firebase: ', '').replace(/\(auth\/[^)]*\)\.?/, '').trim() || 'Could not send reset email';
+        }
     }
 
     async function firebaseSignIn() {
