@@ -19,6 +19,90 @@
         }
 
         /* ── Toolbar ── */
+        #navbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f3f3f3;
+            border-bottom: 1px solid #d0d0d0;
+            user-select: none;
+            z-index: 1000;
+        }
+        #navbar #notebookName {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+        #navbar button {
+            background: #e0e0e0;
+            border: 1px solid #bbb;
+            border-radius: 3px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #333;
+        }
+        #navbar button:hover { background: #d0d0d0; }
+        #nbVersionPanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 70vh;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 5000;
+            display: flex;
+            flex-direction: column;
+        }
+        .nbv-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .nbv-header button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+        }
+        .nbv-header button:hover { color: #333; }
+        #nbVersionList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .nbv-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+        }
+        .nbv-item:hover { background: #f5f5f5; }
+        .nbv-item .nbv-date { color: #555; }
+        .nbv-item .nbv-pages { color: #888; font-size: 12px; margin-left: 8px; }
+        .nbv-item button {
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .nbv-item button:hover { opacity: 0.85; }
+        .nbv-item.active { background: #e8f4e8; font-weight: 600; }
         #toolbar {
             display: flex;
             align-items: center;
@@ -159,6 +243,15 @@
         }
         .page-item:hover .page-delete { display: block; }
         .page-item .page-delete:hover { color: #c44; }
+        .page-item.dragging { opacity: 0.4; }
+        .page-drop-indicator {
+            height: 2px;
+            background: #4a90d9;
+            margin: 0 8px;
+            border-radius: 1px;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(74,144,217,0.5);
+        }
 
         /* ── Import Button ── */
         #pagePanel .panel-actions {
@@ -282,6 +375,35 @@
             border-color: #4a90d9;
         }
         #versionBanner button:hover { opacity: 0.85; }
+
+        #nbVersionBanner {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px;
+            background: #d4edda;
+            border-bottom: 1px solid #8bc09a;
+            font-size: 13px;
+            color: #155724;
+        }
+        #nbVersionBanner.show { display: flex; }
+        #nbVersionBanner span { flex: 1; }
+        #nbVersionBanner button {
+            padding: 4px 12px;
+            font-size: 12px;
+            border: 1px solid #8bc09a;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            background: #fff;
+            color: #155724;
+        }
+        #nbVersionBanner button:first-of-type {
+            background: #28a745;
+            color: #fff;
+            border-color: #28a745;
+        }
+        #nbVersionBanner button:hover { opacity: 0.85; }
 
         /* ── Lock Screen ── */
         #lockScreen {
@@ -518,7 +640,7 @@
             position: absolute;
             min-width: 160px;
             min-height: 60px;
-            background: #fff;
+            background: transparent;
             border: 2px solid transparent;
             display: inline-flex;
             flex-direction: column;
@@ -526,7 +648,8 @@
             width: auto;
         }
         .note-box.selected {
-            border-color: #4a90d9;
+            background: rgba(200,200,200,0.3);
+            border-color: rgba(160,160,160,0.5);
             z-index: 10;
         }
         .note-box .grab-handle {
@@ -540,7 +663,7 @@
             flex-shrink: 0;
         }
         .note-box.selected .grab-handle {
-            background: #4a90d9;
+            background: rgba(160,160,160,0.25);
         }
         .note-box .grab-handle .dots {
             font-size: 9px;
@@ -548,13 +671,13 @@
             letter-spacing: 1px;
         }
         .note-box.selected .grab-handle .dots {
-            color: rgba(255,255,255,0.7);
+            color: rgba(100,100,100,0.6);
         }
         .note-box .delete-btn {
             display: none;
             background: none;
             border: none;
-            color: #fff;
+            color: rgba(100,100,100,0.8);
             font-size: 14px;
             cursor: pointer;
             line-height: 1;
@@ -571,9 +694,22 @@
             resize: both;
             min-width: 140px;
             min-height: 40px;
+            background: transparent;
+        }
+        .note-box.selected .note-content,
+        .note-box.multi-selected .note-content {
+            background: rgba(200,200,200,0.3);
+        }
+        .note-box .note-content a {
+            color: #1a6dd4;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .note-box .note-content a:hover {
+            color: #0d4a99;
         }
         .note-box.grabbed .note-content {
-            background: #f0f0f0;
+            background: rgba(200,200,200,0.3);
             cursor: default;
             user-select: none;
         }
@@ -734,9 +870,107 @@
             background: #ddd;
             margin: 4px 0;
         }
+
+        /* ── Canvas Cursor ── */
+        #canvasCursor {
+            display: none;
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: #2266cc;
+            pointer-events: none;
+            z-index: 8;
+            animation: canvasCursorBlink 1s step-end infinite;
+        }
+        @keyframes canvasCursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ── Selection Rectangle ── */
+        #selectionRect {
+            display: none;
+            position: absolute;
+            border: 1px solid #4a90d9;
+            background: rgba(74, 144, 217, 0.08);
+            z-index: 9;
+            pointer-events: none;
+        }
+
+        /* ── Multi-select highlight ── */
+        .note-box.multi-selected {
+            background: rgba(200,200,200,0.3);
+            border-color: rgba(160,160,160,0.5);
+            box-shadow: 0 0 0 1px rgba(160,160,160,0.4);
+            z-index: 10;
+        }
+        .note-box.multi-selected .grab-handle {
+            background: rgba(160,160,160,0.25);
+        }
+        .note-box.multi-selected .grab-handle .dots {
+            color: rgba(100,100,100,0.6);
+        }
+
+        /* ── Note Context Menu ── */
+        #noteCtxMenu {
+            display: none;
+            position: fixed;
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            z-index: 3000;
+            padding: 4px 0;
+            min-width: 150px;
+        }
+        #noteCtxMenu .ctx-item {
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        #noteCtxMenu .ctx-item:hover {
+            background: #e8f0fb;
+        }
+        #noteCtxMenu .ctx-item.disabled {
+            color: #bbb;
+            cursor: default;
+        }
+        #noteCtxMenu .ctx-item.disabled:hover {
+            background: transparent;
+        }
+        #noteCtxMenu .ctx-sep {
+            height: 1px;
+            background: #ddd;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
+
+<!-- Navbar -->
+<div id="navbar">
+    <span id="notebookName">Notebook</span>
+    <div style="flex:1"></div>
+    <button onclick="exportNotebook()" title="Export entire notebook as a file">Export</button>
+    <button onclick="showNotebookVersions()" title="Restore a previous version of the entire notebook">Notebook Versions</button>
+</div>
+
+<!-- Notebook Version Preview Banner -->
+<div id="nbVersionBanner">
+    <span id="nbVersionBannerText"></span>
+    <button onclick="restoreNotebookVersion()">Restore This Version</button>
+    <button onclick="closeNotebookPreview()">Go Back</button>
+</div>
+
+<!-- Notebook Versions Panel (hidden by default) -->
+<div id="nbVersionPanel" style="display:none">
+    <div class="nbv-header">
+        <span>Notebook Versions</span>
+        <button onclick="closeNotebookVersions()">&times;</button>
+    </div>
+    <div id="nbVersionList"></div>
+</div>
 
 <!-- Toolbar -->
 <div id="toolbar">
@@ -769,6 +1003,8 @@
     <div class="sep"></div>
     <button onclick="document.getElementById('imgFile').click()" title="Insert Image">Image</button>
     <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
+    <div class="sep"></div>
+    <button onclick="performUndo()" title="Undo (Ctrl+Z)" id="btnUndo">Undo</button>
     <div style="flex:1"></div>
     <span class="sync-status" id="syncStatus"></span>
     <button onclick="toggleVersionPanel()" title="Previous Page Versions" id="btnVersions">Versions</button>
@@ -806,6 +1042,16 @@
         <button onclick="closeParaSpacing()">Cancel</button>
         <button class="primary" onclick="applyParaSpacing()">Apply</button>
     </div>
+</div>
+
+<!-- Note Context Menu -->
+<div id="noteCtxMenu">
+    <div class="ctx-item" id="ctxCopy">Copy</div>
+    <div class="ctx-item" id="ctxDuplicate">Duplicate</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctxPaste">Paste</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctxDelete" style="color:#c44;">Delete</div>
 </div>
 
 <!-- Table Context Menu -->
@@ -893,7 +1139,9 @@
             <input type="text" id="pageTitleInput" placeholder="Untitled Page" spellcheck="false">
         </div>
         <div id="canvas">
-            <div id="canvas-hint">Double-click anywhere to add a note</div>
+            <div id="canvas-hint">Click anywhere to start</div>
+            <div id="canvasCursor"></div>
+            <div id="selectionRect"></div>
             <!-- Version History Panel -->
             <div id="versionPanel">
                 <div class="vp-header">
@@ -1054,6 +1302,7 @@
         // Clear canvas
         document.getElementById('canvas').querySelectorAll('.note-box').forEach(b => b.remove());
         activeBox = null;
+        selectedBoxes.clear();
         pages = [];
         showLockScreen();
     }
@@ -1229,6 +1478,65 @@
     let activeBox = null;
     let nextBoxId = 1;
     let saveTimer = null;
+    let selectedBoxes = new Set();
+    let clipboardBoxes = null;
+
+    // ── Canvas Cursor State ──
+    let canvasCursorActive = false;
+    let canvasCursorX = 0, canvasCursorY = 0;
+
+    function showCanvasCursor(x, y) {
+        const el = document.getElementById('canvasCursor');
+        canvasCursorX = x;
+        canvasCursorY = y;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.display = 'block';
+        canvasCursorActive = true;
+    }
+
+    function hideCanvasCursor() {
+        const el = document.getElementById('canvasCursor');
+        el.style.display = 'none';
+        canvasCursorActive = false;
+    }
+
+    // ── Multi-Selection Helpers ──
+    function clearSelection() {
+        selectedBoxes.forEach(b => b.classList.remove('multi-selected'));
+        selectedBoxes.clear();
+        if (activeBox) {
+            activeBox.classList.remove('selected');
+            activeBox.classList.remove('grabbed');
+            const c = activeBox.querySelector('.note-content');
+            if (c) c.contentEditable = 'true';
+            activeBox = null;
+        }
+        if (document.activeElement && document.activeElement.isContentEditable) {
+            document.activeElement.blur();
+        }
+    }
+
+    function addToSelection(box) {
+        selectedBoxes.add(box);
+        box.classList.add('multi-selected');
+    }
+
+    function removeFromSelection(box) {
+        selectedBoxes.delete(box);
+        box.classList.remove('multi-selected');
+    }
+
+    function selectOnly(box) {
+        // Clear all other selections
+        selectedBoxes.forEach(b => {
+            if (b !== box) b.classList.remove('multi-selected');
+        });
+        selectedBoxes.clear();
+        // Select this one as active + multi-selected
+        selectBox(box);
+        addToSelection(box);
+    }
 
     // ── Page Management ──
     function loadPagesPlaintext() {
@@ -1291,13 +1599,20 @@
         document.getElementById('versionPanel').classList.remove('open');
     }
 
+    // ── Page drag-to-reorder state ──
+    let pageDrag = null; // { pageId, startY, itemEl }
+
     function renderPageList() {
         const list = document.getElementById('pageList');
         list.innerHTML = '';
-        pages.forEach(p => {
+        pages.forEach((p, idx) => {
             const item = document.createElement('div');
             item.className = 'page-item' + (p.id === activePageId ? ' active' : '');
-            item.addEventListener('click', () => switchPage(p.id));
+            item.dataset.pageId = p.id;
+            item.dataset.pageIdx = idx;
+            item.addEventListener('click', () => {
+                if (!pageDrag) switchPage(p.id);
+            });
 
             const name = document.createElement('span');
             name.className = 'page-name';
@@ -1329,6 +1644,14 @@
                 if (e.key === 'Escape') { name.textContent = p.name; name.blur(); }
             });
 
+            // Drag to reorder
+            item.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                if (name.contentEditable === 'true') return;
+                if (e.target.closest('.page-delete')) return;
+                pageDrag = { pageId: p.id, startY: e.clientY, itemEl: item, moved: false };
+            });
+
             const del = document.createElement('button');
             del.className = 'page-delete';
             del.innerHTML = '&times;';
@@ -1339,6 +1662,117 @@
             if (pages.length > 1) item.appendChild(del);
             list.appendChild(item);
         });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (!pageDrag) return;
+        // Start dragging after 4px movement
+        if (!pageDrag.moved && Math.abs(e.clientY - pageDrag.startY) < 4) return;
+        pageDrag.moved = true;
+        pageDrag.itemEl.classList.add('dragging');
+
+        const list = document.getElementById('pageList');
+        // Remove old indicator
+        list.querySelectorAll('.page-drop-indicator').forEach(el => el.remove());
+
+        // Find drop position
+        const items = Array.from(list.querySelectorAll('.page-item'));
+        let insertBefore = null;
+        for (const it of items) {
+            const rect = it.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                insertBefore = it;
+                break;
+            }
+        }
+
+        // Don't show indicator right above or below the dragged item
+        const dragIdx = items.indexOf(pageDrag.itemEl);
+        const targetIdx = insertBefore ? items.indexOf(insertBefore) : items.length;
+        if (targetIdx === dragIdx || targetIdx === dragIdx + 1) return;
+
+        const indicator = document.createElement('div');
+        indicator.className = 'page-drop-indicator';
+        if (insertBefore) {
+            list.insertBefore(indicator, insertBefore);
+        } else {
+            list.appendChild(indicator);
+        }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        if (!pageDrag) return;
+        const drag = pageDrag;
+        pageDrag = null;
+
+        const list = document.getElementById('pageList');
+        list.querySelectorAll('.page-drop-indicator').forEach(el => el.remove());
+        drag.itemEl.classList.remove('dragging');
+
+        if (!drag.moved) return;
+
+        // Find where to drop
+        const items = Array.from(list.querySelectorAll('.page-item'));
+        let targetIdx = items.length;
+        for (let i = 0; i < items.length; i++) {
+            const rect = items[i].getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                targetIdx = i;
+                break;
+            }
+        }
+
+        // Reorder pages array
+        const fromIdx = pages.findIndex(p => p.id === drag.pageId);
+        if (fromIdx === -1) return;
+        // Adjust target if dragging downward
+        if (targetIdx > fromIdx) targetIdx--;
+        if (targetIdx === fromIdx) return;
+
+        const [moved] = pages.splice(fromIdx, 1);
+        pages.splice(targetIdx, 0, moved);
+        savePages();
+        renderPageList();
+    });
+
+    // ── Undo Stack ──
+    let undoStack = [];
+    const MAX_UNDO = 50;
+    let isUndoing = false;
+
+    function captureCanvasState() {
+        const data = [];
+        document.querySelectorAll('.note-box').forEach(box => {
+            const content = box.querySelector('.note-content');
+            data.push({
+                id: box.dataset.id,
+                x: parseInt(box.style.left) || 0,
+                y: parseInt(box.style.top) || 0,
+                width: box.offsetWidth,
+                height: box.offsetHeight,
+                html: content.innerHTML
+            });
+        });
+        return JSON.stringify(data);
+    }
+
+    function performUndo() {
+        if (undoStack.length === 0) return;
+        // Find most recent entry for current page
+        let idx = -1;
+        for (let i = undoStack.length - 1; i >= 0; i--) {
+            if (undoStack[i].pageId === activePageId) { idx = i; break; }
+        }
+        if (idx === -1) return;
+        const entry = undoStack.splice(idx, 1)[0];
+        isUndoing = true;
+        const page = pages.find(p => p.id === activePageId);
+        if (page) {
+            page.boxes = entry.boxes;
+            savePages();
+            loadCanvasForPage(activePageId);
+        }
+        isUndoing = false;
     }
 
     // ── Canvas ↔ Page ──
@@ -1357,6 +1791,15 @@
                 html: content.innerHTML
             });
         });
+        // Push previous state to undo stack if changed
+        if (!isUndoing && page.boxes && page.boxes.length > 0) {
+            const oldState = JSON.stringify(page.boxes);
+            const newState = JSON.stringify(data);
+            if (oldState !== newState) {
+                undoStack.push({ pageId: activePageId, boxes: JSON.parse(oldState) });
+                if (undoStack.length > MAX_UNDO) undoStack.shift();
+            }
+        }
         page.boxes = data;
     }
 
@@ -1365,6 +1808,7 @@
         // Remove existing note boxes
         canvas.querySelectorAll('.note-box').forEach(b => b.remove());
         activeBox = null;
+        selectedBoxes.clear();
         nextBoxId = 1;
 
         const page = pages.find(p => p.id === pageId);
@@ -1396,6 +1840,50 @@
         renderPageList();
         scheduleSave();
     });
+
+    // ── Auto-linkify URLs in note content ──
+    const URL_RE = /(?<!\w)(https?:\/\/[^\s<>"')\]]+)/gi;
+
+    function linkifyContent(el) {
+        // Walk text nodes and wrap URLs in <a> tags
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        while (walker.nextNode()) {
+            // Skip text already inside an <a> tag
+            if (walker.currentNode.parentElement.closest('a')) continue;
+            if (URL_RE.test(walker.currentNode.textContent)) {
+                textNodes.push(walker.currentNode);
+            }
+            URL_RE.lastIndex = 0;
+        }
+        if (textNodes.length === 0) return;
+        // Save cursor position
+        const sel = window.getSelection();
+        const hadFocus = el.contains(document.activeElement);
+        textNodes.forEach(node => {
+            const frag = document.createDocumentFragment();
+            let text = node.textContent;
+            let match;
+            let lastIdx = 0;
+            URL_RE.lastIndex = 0;
+            while ((match = URL_RE.exec(text)) !== null) {
+                if (match.index > lastIdx) {
+                    frag.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+                }
+                const a = document.createElement('a');
+                a.href = match[1];
+                a.textContent = match[1];
+                a.target = '_blank';
+                a.rel = 'noopener';
+                frag.appendChild(a);
+                lastIdx = match.index + match[0].length;
+            }
+            if (lastIdx < text.length) {
+                frag.appendChild(document.createTextNode(text.substring(lastIdx)));
+            }
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
 
     // ── Formatting ──
     function fmt(command) {
@@ -1494,6 +1982,7 @@
         delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             box.remove();
+            selectedBoxes.delete(box);
             if (activeBox === box) activeBox = null;
             scheduleSave();
             if (!document.querySelector('.note-box')) {
@@ -1508,15 +1997,29 @@
         const content = document.createElement('div');
         content.className = 'note-content';
         content.contentEditable = 'true';
-        if (html) content.innerHTML = html;
+        if (html) {
+            content.innerHTML = html;
+            linkifyContent(content);
+        }
 
         content.addEventListener('input', () => scheduleSave());
+        content.addEventListener('blur', () => linkifyContent(content));
         content.addEventListener('focus', () => {
             if (!box.classList.contains('grabbed')) selectBox(box);
+        });
+        content.addEventListener('click', (e) => {
+            const a = e.target.closest('a');
+            if (a && a.href && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                window.open(a.href, '_blank');
+            }
         });
         content.addEventListener('mousedown', (e) => {
             if (box.classList.contains('grabbed')) {
                 e.preventDefault(); // prevent focus when grabbed
+            } else if (!e.shiftKey) {
+                // Clear other selections when clicking into content to edit
+                selectOnly(box);
             }
             e.stopPropagation();
         });
@@ -1551,9 +2054,29 @@
         box.appendChild(handle);
         box.appendChild(content);
 
-        // Select on click
+        // Select on click (shift = toggle in/out of selection)
         box.addEventListener('mousedown', (e) => {
-            selectBox(box);
+            hideCanvasCursor();
+            if (e.shiftKey) {
+                e.preventDefault();
+                if (selectedBoxes.has(box)) {
+                    removeFromSelection(box);
+                    if (activeBox === box) {
+                        box.classList.remove('selected');
+                        box.classList.remove('grabbed');
+                        activeBox = selectedBoxes.size > 0 ? [...selectedBoxes][selectedBoxes.size - 1] : null;
+                        if (activeBox) activeBox.classList.add('selected');
+                    }
+                } else {
+                    addToSelection(box);
+                    selectBox(box);
+                }
+            } else if (!selectedBoxes.has(box)) {
+                selectOnly(box);
+            } else {
+                // Already in selection — just make it the active one
+                selectBox(box);
+            }
         });
 
         // Drag via handle
@@ -1574,16 +2097,16 @@
         }
         box.classList.add('selected');
         activeBox = box;
+        addToSelection(box);
     }
 
     function grabBox(box) {
-        selectBox(box);
+        box.classList.add('selected');
         box.classList.add('grabbed');
         const content = box.querySelector('.note-content');
         content.contentEditable = 'false';
-        // Remove cursor / blur
-        window.getSelection().removeAllRanges();
         content.blur();
+        window.getSelection().removeAllRanges();
     }
 
     function editBox(box) {
@@ -1594,19 +2117,35 @@
         content.focus();
     }
 
-    // ── Drag ──
+    // ── Drag (multi-drag aware) ──
     function initDrag(handle, box) {
-        let dragging = false, startX, startY, origX, origY;
+        let dragging = false, startX, startY;
+        let dragTargets = []; // [{box, origX, origY}, ...]
 
         handle.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            // If this box isn't in the selection, select only it
+            if (!selectedBoxes.has(box)) {
+                selectOnly(box);
+            }
+
             dragging = true;
             startX = e.clientX;
             startY = e.clientY;
-            origX = parseInt(box.style.left) || 0;
-            origY = parseInt(box.style.top) || 0;
-            grabBox(box);
+
+            // Record starting positions of all selected boxes
+            dragTargets = [];
+            selectedBoxes.forEach(b => {
+                dragTargets.push({
+                    box: b,
+                    origX: parseInt(b.style.left) || 0,
+                    origY: parseInt(b.style.top) || 0
+                });
+                grabBox(b);
+            });
+
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
         });
@@ -1615,42 +2154,110 @@
             if (!dragging) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-            box.style.left = Math.max(0, origX + dx) + 'px';
-            box.style.top = Math.max(0, origY + dy) + 'px';
+            dragTargets.forEach(t => {
+                t.box.style.left = Math.max(0, t.origX + dx) + 'px';
+                t.box.style.top = Math.max(0, t.origY + dy) + 'px';
+            });
         }
 
         function onUp() {
             dragging = false;
+            dragTargets = [];
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             scheduleSave();
         }
     }
 
-    // ── Canvas double-click ──
-    document.getElementById('canvas').addEventListener('dblclick', (e) => {
-        if (e.target.closest('.note-box')) return;
+    // ── Canvas: single-click to create, drag to select ──
+    (function() {
         const canvas = document.getElementById('canvas');
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left + canvas.scrollLeft;
-        const y = e.clientY - rect.top + canvas.scrollTop;
-        const box = createNoteBox(x - 10, y - 10, 280, null, '');
-        selectBox(box);
-        box.querySelector('.note-content').focus();
-    });
+        const selRect = document.getElementById('selectionRect');
+        let canvasDown = false, selDragging = false;
+        let startClientX, startClientY, startCanvasX, startCanvasY;
 
-    // Deselect when clicking empty canvas
-    document.getElementById('canvas').addEventListener('mousedown', (e) => {
-        if (!e.target.closest('.note-box') && !e.target.closest('#toolbar') && !e.target.closest('#tablePicker')) {
-            if (activeBox) {
-                activeBox.classList.remove('selected');
-                activeBox.classList.remove('grabbed');
-                const c = activeBox.querySelector('.note-content');
-                if (c) c.contentEditable = 'true';
-                activeBox = null;
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            if (e.target.closest('.note-box') || e.target.closest('#toolbar') ||
+                e.target.closest('#tablePicker') || e.target.closest('#versionPanel')) return;
+
+            canvasDown = true;
+            selDragging = false;
+            const rect = canvas.getBoundingClientRect();
+            startClientX = e.clientX;
+            startClientY = e.clientY;
+            startCanvasX = e.clientX - rect.left + canvas.scrollLeft;
+            startCanvasY = e.clientY - rect.top + canvas.scrollTop;
+
+            document.addEventListener('mousemove', onCanvasMove);
+            document.addEventListener('mouseup', onCanvasUp);
+        });
+
+        function onCanvasMove(e) {
+            if (!canvasDown) return;
+            const dx = e.clientX - startClientX;
+            const dy = e.clientY - startClientY;
+            if (!selDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+                selDragging = true;
+                hideCanvasCursor();
+                if (!e.shiftKey) clearSelection();
+                selRect.style.display = 'block';
+            }
+            if (selDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const curX = e.clientX - rect.left + canvas.scrollLeft;
+                const curY = e.clientY - rect.top + canvas.scrollTop;
+                const rx = Math.min(startCanvasX, curX);
+                const ry = Math.min(startCanvasY, curY);
+                const rw = Math.abs(curX - startCanvasX);
+                const rh = Math.abs(curY - startCanvasY);
+                selRect.style.left = rx + 'px';
+                selRect.style.top = ry + 'px';
+                selRect.style.width = rw + 'px';
+                selRect.style.height = rh + 'px';
             }
         }
-    });
+
+        function onCanvasUp(e) {
+            document.removeEventListener('mousemove', onCanvasMove);
+            document.removeEventListener('mouseup', onCanvasUp);
+            if (!canvasDown) return;
+            canvasDown = false;
+
+            if (selDragging) {
+                // Finish selection rectangle — find intersecting boxes
+                selRect.style.display = 'none';
+                const rLeft = parseInt(selRect.style.left);
+                const rTop = parseInt(selRect.style.top);
+                const rRight = rLeft + parseInt(selRect.style.width);
+                const rBottom = rTop + parseInt(selRect.style.height);
+                canvas.querySelectorAll('.note-box').forEach(box => {
+                    const bx = parseInt(box.style.left) || 0;
+                    const by = parseInt(box.style.top) || 0;
+                    const bRight = bx + box.offsetWidth;
+                    const bBottom = by + box.offsetHeight;
+                    if (bx < rRight && bRight > rLeft && by < rBottom && bBottom > rTop) {
+                        addToSelection(box);
+                    }
+                });
+                // Set activeBox to last selected
+                if (selectedBoxes.size > 0) {
+                    const last = [...selectedBoxes][selectedBoxes.size - 1];
+                    last.classList.add('selected');
+                    activeBox = last;
+                }
+                selDragging = false;
+            } else {
+                // Single click on empty canvas — place blinking cursor
+                clearSelection();
+                showCanvasCursor(startCanvasX, startCanvasY);
+            }
+        }
+        canvas.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.note-box')) return;
+            clearSelection();
+        });
+    })();
 
     // Close popups on outside click
     document.addEventListener('mousedown', (e) => {
@@ -1663,20 +2270,239 @@
         if (!e.target.closest('#tableCtxMenu')) {
             document.getElementById('tableCtxMenu').style.display = 'none';
         }
+        if (!e.target.closest('#noteCtxMenu')) {
+            document.getElementById('noteCtxMenu').style.display = 'none';
+        }
     });
 
-    // ── Delete key removes selected (non-editing) box ──
+    // ── Clipboard: Ctrl+C / Ctrl+V / Ctrl+Z ──
     document.addEventListener('keydown', (e) => {
-        if (e.key !== 'Delete' || !activeBox) return;
-        // Don't delete if user is typing in a contenteditable area
+        // Don't intercept when editing text
         const active = document.activeElement;
         if (active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
-        activeBox.remove();
+
+        if (e.ctrlKey && e.key === 'z') {
+            e.preventDefault();
+            performUndo();
+            return;
+        }
+        if (e.ctrlKey && e.key === 'c' && selectedBoxes.size > 0) {
+            e.preventDefault();
+            copySelectedBoxes();
+        }
+        if (e.ctrlKey && e.key === 'v') {
+            if (canvasCursorActive && clipboardBoxes) {
+                // Paste copied boxes at canvas cursor position
+                e.preventDefault();
+                hideCanvasCursor();
+                pasteBoxes(canvasCursorX, canvasCursorY);
+            } else if (canvasCursorActive && !clipboardBoxes) {
+                // Don't create a note here — let the paste event handler decide
+                // whether to split into multiple notes or create a single one.
+                // Store cursor info so the paste handler can use it.
+                window._pendingPasteAtCursor = { x: canvasCursorX, y: canvasCursorY };
+                hideCanvasCursor();
+                // Don't preventDefault — let the paste event fire naturally
+            } else if (clipboardBoxes) {
+                e.preventDefault();
+                pasteBoxes(null, null);
+            }
+        }
+    });
+
+    // ── Typing at canvas cursor creates a note ──
+    document.addEventListener('keydown', (e) => {
+        if (!canvasCursorActive || activeBox) return;
+        const active = document.activeElement;
+        if (active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        // Ignore modifier combos (Ctrl+*, Alt+*), function keys, navigation, etc.
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        const ignore = ['Escape', 'Delete', 'Tab', 'CapsLock', 'Shift', 'Control', 'Alt', 'Meta',
+            'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown',
+            'Insert', 'NumLock', 'ScrollLock', 'Pause', 'ContextMenu', 'PrintScreen'];
+        if (ignore.includes(e.key) || e.key.startsWith('F') && e.key.length > 1) return;
+
+        const cx = canvasCursorX, cy = canvasCursorY;
+        hideCanvasCursor();
+        const box = createNoteBox(cx - 10, cy - 10, 280, null, '');
+        selectOnly(box);
+        const content = box.querySelector('.note-content');
+        content.focus();
+        // The keydown event will now propagate into the focused contentEditable,
+        // inserting the typed character naturally. If that doesn't work in some
+        // browsers, fall back to execCommand:
+        setTimeout(() => {
+            if (!content.textContent && e.key.length === 1) {
+                document.execCommand('insertText', false, e.key);
+            }
+        }, 0);
+    });
+
+    function copySelectedBoxes() {
+        if (selectedBoxes.size === 0) return;
+        // Find bounding box origin for relative positions
+        let minX = Infinity, minY = Infinity;
+        selectedBoxes.forEach(b => {
+            const bx = parseInt(b.style.left) || 0;
+            const by = parseInt(b.style.top) || 0;
+            if (bx < minX) minX = bx;
+            if (by < minY) minY = by;
+        });
+        clipboardBoxes = [];
+        selectedBoxes.forEach(b => {
+            const content = b.querySelector('.note-content');
+            clipboardBoxes.push({
+                dx: (parseInt(b.style.left) || 0) - minX,
+                dy: (parseInt(b.style.top) || 0) - minY,
+                width: b.offsetWidth,
+                html: content ? content.innerHTML : ''
+            });
+        });
+    }
+
+    function pasteBoxes(baseX, baseY) {
+        if (!clipboardBoxes || clipboardBoxes.length === 0) return;
+        const canvas = document.getElementById('canvas');
+        // Default paste position: offset from original
+        if (baseX === null || baseY === null) {
+            // Find the bounding box of original positions + offset
+            let minX = Infinity, minY = Infinity;
+            selectedBoxes.forEach(b => {
+                const bx = parseInt(b.style.left) || 0;
+                const by = parseInt(b.style.top) || 0;
+                if (bx < minX) minX = bx;
+                if (by < minY) minY = by;
+            });
+            if (minX === Infinity) { minX = 60; minY = 60; }
+            baseX = minX + 20;
+            baseY = minY + 20;
+        }
+        clearSelection();
+        clipboardBoxes.forEach(d => {
+            const box = createNoteBox(baseX + d.dx, baseY + d.dy, d.width, null, d.html);
+            addToSelection(box);
+        });
+        if (selectedBoxes.size > 0) {
+            const last = [...selectedBoxes][selectedBoxes.size - 1];
+            last.classList.add('selected');
+            activeBox = last;
+        }
+        scheduleSave();
+    }
+
+    function duplicateSelectedBoxes() {
+        if (selectedBoxes.size === 0) return;
+        copySelectedBoxes();
+        // Find bounding box origin of selected to offset paste
+        let minX = Infinity, minY = Infinity;
+        selectedBoxes.forEach(b => {
+            const bx = parseInt(b.style.left) || 0;
+            const by = parseInt(b.style.top) || 0;
+            if (bx < minX) minX = bx;
+            if (by < minY) minY = by;
+        });
+        pasteBoxes(minX + 20, minY + 20);
+    }
+
+    // ── Right-Click Context Menu (notes + canvas) ──
+    let ctxRightClickX = 0, ctxRightClickY = 0;
+
+    document.getElementById('canvas').addEventListener('contextmenu', (e) => {
+        const td = e.target.closest('td');
+        if (td && td.closest('.note-content')) return; // let table ctx menu handle it
+
+        e.preventDefault();
+        const noteBox = e.target.closest('.note-box');
+        const menu = document.getElementById('noteCtxMenu');
+        const copyItem = document.getElementById('ctxCopy');
+        const dupItem = document.getElementById('ctxDuplicate');
+        const pasteItem = document.getElementById('ctxPaste');
+        const deleteItem = document.getElementById('ctxDelete');
+
+        const canvas = document.getElementById('canvas');
+        const canvasRect = canvas.getBoundingClientRect();
+        ctxRightClickX = e.clientX - canvasRect.left + canvas.scrollLeft;
+        ctxRightClickY = e.clientY - canvasRect.top + canvas.scrollTop;
+
+        if (noteBox) {
+            // Right-clicked on a note
+            hideCanvasCursor();
+            if (!selectedBoxes.has(noteBox)) selectOnly(noteBox);
+            copyItem.style.display = '';
+            dupItem.style.display = '';
+            deleteItem.style.display = '';
+            pasteItem.classList.toggle('disabled', !clipboardBoxes);
+        } else {
+            // Right-clicked on empty canvas — use this position for paste
+            hideCanvasCursor();
+            copyItem.style.display = 'none';
+            dupItem.style.display = 'none';
+            deleteItem.style.display = 'none';
+            if (!clipboardBoxes) {
+                return; // nothing to show
+            }
+            pasteItem.classList.remove('disabled');
+        }
+
+        menu.style.display = 'block';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        // Keep menu on screen
+        const mr = menu.getBoundingClientRect();
+        if (mr.right > window.innerWidth) menu.style.left = (e.clientX - mr.width) + 'px';
+        if (mr.bottom > window.innerHeight) menu.style.top = (e.clientY - mr.height) + 'px';
+    });
+
+    document.getElementById('ctxCopy').addEventListener('click', () => {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        copySelectedBoxes();
+    });
+
+    document.getElementById('ctxDuplicate').addEventListener('click', () => {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        duplicateSelectedBoxes();
+    });
+
+    document.getElementById('ctxPaste').addEventListener('click', () => {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        if (!clipboardBoxes) return;
+        pasteBoxes(ctxRightClickX, ctxRightClickY);
+    });
+
+    document.getElementById('ctxDelete').addEventListener('click', () => {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        selectedBoxes.forEach(b => b.remove());
+        selectedBoxes.clear();
         activeBox = null;
         scheduleSave();
         if (!document.querySelector('.note-box')) {
             const hint = document.getElementById('canvas-hint');
             if (hint) hint.style.display = '';
+        }
+    });
+
+    // ── Delete key removes all selected boxes ──
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Delete' || selectedBoxes.size === 0) return;
+        // Don't delete if user is typing in a contenteditable area
+        const active = document.activeElement;
+        if (active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        selectedBoxes.forEach(b => b.remove());
+        selectedBoxes.clear();
+        activeBox = null;
+        scheduleSave();
+        if (!document.querySelector('.note-box')) {
+            const hint = document.getElementById('canvas-hint');
+            if (hint) hint.style.display = '';
+        }
+    });
+
+    // ── Escape clears selection ──
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hideCanvasCursor();
+            clearSelection();
+            document.getElementById('noteCtxMenu').style.display = 'none';
         }
     });
 
@@ -1750,6 +2576,156 @@
     function forceVersionSnapshot() {
         clearTimeout(versionSnapshotTimer);
         saveVersionSnapshot();
+    }
+
+    // ── Notebook Versions ──
+    const NB_VERSIONS_KEY = 'onenote_nb_versions';
+    const MAX_NB_VERSIONS = 10;
+
+    function saveNotebookSnapshot() {
+        saveCanvasToPage();
+        const snapshot = JSON.stringify(pages);
+        try {
+            let nbVersions = JSON.parse(localStorage.getItem(NB_VERSIONS_KEY)) || [];
+            // Don't save if identical to last
+            if (nbVersions.length > 0 && JSON.stringify(nbVersions[nbVersions.length - 1].data) === snapshot) return;
+            nbVersions.push({
+                timestamp: Date.now(),
+                pageCount: pages.length,
+                data: JSON.parse(snapshot)
+            });
+            if (nbVersions.length > MAX_NB_VERSIONS) nbVersions.splice(0, nbVersions.length - MAX_NB_VERSIONS);
+            localStorage.setItem(NB_VERSIONS_KEY, JSON.stringify(nbVersions));
+        } catch {}
+    }
+
+    // Auto-save notebook snapshot every 5 minutes
+    setInterval(saveNotebookSnapshot, 300000);
+    // Also snapshot on page switch
+    const _origForceVersionSnapshot = forceVersionSnapshot;
+    forceVersionSnapshot = function() {
+        _origForceVersionSnapshot();
+        saveNotebookSnapshot();
+    };
+
+    let nbPreviewData = null; // stores saved state before previewing
+    let nbPreviewIdx = null;
+
+    function showNotebookVersions() {
+        saveNotebookSnapshot();
+        const panel = document.getElementById('nbVersionPanel');
+        const list = document.getElementById('nbVersionList');
+        let nbVersions = [];
+        try { nbVersions = JSON.parse(localStorage.getItem(NB_VERSIONS_KEY)) || []; } catch {}
+        if (nbVersions.length === 0) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#888">No notebook versions saved yet.</div>';
+            panel.style.display = 'flex';
+            return;
+        }
+        list.innerHTML = '';
+        [...nbVersions].reverse().forEach((v, ri) => {
+            const idx = nbVersions.length - 1 - ri;
+            const item = document.createElement('div');
+            item.className = 'nbv-item';
+            const d = new Date(v.timestamp);
+            const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            item.innerHTML = '<div><span class="nbv-date">' + dateStr + '</span>' +
+                '<span class="nbv-pages">' + v.pageCount + ' page' + (v.pageCount !== 1 ? 's' : '') + '</span></div>';
+            const btnWrap = document.createElement('div');
+            btnWrap.style.display = 'flex'; btnWrap.style.gap = '6px';
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = 'Preview';
+            prevBtn.style.background = '#6c757d'; prevBtn.style.borderColor = '#6c757d';
+            prevBtn.addEventListener('click', () => previewNotebookVersion(idx));
+            btnWrap.appendChild(prevBtn);
+            item.appendChild(btnWrap);
+            list.appendChild(item);
+        });
+        panel.style.display = 'flex';
+    }
+
+    function previewNotebookVersion(idx) {
+        let nbVersions = [];
+        try { nbVersions = JSON.parse(localStorage.getItem(NB_VERSIONS_KEY)) || []; } catch {}
+        if (!nbVersions[idx]) return;
+        const v = nbVersions[idx];
+
+        // Save current state before preview (only once)
+        if (!nbPreviewData) {
+            saveCanvasToPage();
+            nbPreviewData = { pages: JSON.parse(JSON.stringify(pages)), activePageId: activePageId };
+        }
+        nbPreviewIdx = idx;
+
+        // Load the version temporarily
+        pages = JSON.parse(JSON.stringify(v.data));
+        activePageId = pages.length > 0 ? pages[0].id : null;
+        renderPageList();
+        if (activePageId) loadCanvasForPage(activePageId);
+
+        // Highlight active item
+        document.querySelectorAll('.nbv-item').forEach(el => el.classList.remove('active'));
+        const items = document.querySelectorAll('.nbv-item');
+        const reverseIdx = nbVersions.length - 1 - idx;
+        if (items[reverseIdx]) items[reverseIdx].classList.add('active');
+
+        // Show banner
+        const d = new Date(v.timestamp);
+        const timeStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('nbVersionBannerText').textContent =
+            'Previewing notebook from ' + timeStr + ' (' + v.pageCount + ' pages)';
+        document.getElementById('nbVersionBanner').classList.add('show');
+    }
+
+    function restoreNotebookVersion() {
+        if (nbPreviewIdx === null) return;
+        let nbVersions = [];
+        try { nbVersions = JSON.parse(localStorage.getItem(NB_VERSIONS_KEY)) || []; } catch {}
+        if (!nbVersions[nbPreviewIdx]) return;
+
+        // pages are already loaded from preview — just save them
+        saveCanvasToPage();
+        savePages();
+        nbPreviewData = null;
+        nbPreviewIdx = null;
+        document.getElementById('nbVersionBanner').classList.remove('show');
+        document.getElementById('nbVersionPanel').style.display = 'none';
+        showToast('Notebook restored to previous version');
+    }
+
+    function closeNotebookPreview() {
+        if (nbPreviewData) {
+            pages = nbPreviewData.pages;
+            activePageId = nbPreviewData.activePageId;
+            renderPageList();
+            if (activePageId) loadCanvasForPage(activePageId);
+            nbPreviewData = null;
+            nbPreviewIdx = null;
+        }
+        document.getElementById('nbVersionBanner').classList.remove('show');
+    }
+
+    function closeNotebookVersions() {
+        closeNotebookPreview();
+        document.getElementById('nbVersionPanel').style.display = 'none';
+    }
+
+    // ── Export Notebook ──
+    function exportNotebook() {
+        saveCanvasToPage();
+        const data = {
+            exportDate: new Date().toISOString(),
+            pageCount: pages.length,
+            pages: pages
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'notebook-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Notebook exported (' + pages.length + ' pages)');
     }
 
     // ── Paragraph Spacing ──
@@ -2129,43 +3105,310 @@
         showToast('Imported "' + title + '" (' + boxesData.length + ' section' + (boxesData.length > 1 ? 's' : '') + ')');
     }
 
-    // ── Paste Handler (OneNote clipboard cleanup) ──
-    document.addEventListener('paste', (e) => {
-        const content = e.target.closest('.note-content');
-        if (!content) return;
-
-        const clipHTML = e.clipboardData.getData('text/html');
-        if (!clipHTML) return; // let plain text paste through normally
-
-        // Check if it looks like Office/OneNote content
-        const isOffice = /class="Mso|OneNote|xmlns:o=|mso-/i.test(clipHTML);
-        if (!isOffice) return; // let normal HTML paste through
-
-        e.preventDefault();
-
-        let cleaned = cleanHTML(clipHTML);
-
-        // Parse and extract just the body content
+    // ── Split clipboard HTML into separate note sections ──
+    function splitClipboardHTML(clipHTML, clipText) {
+        const cleaned = cleanHTML(clipHTML);
         const parser = new DOMParser();
         const doc = parser.parseFromString(cleaned, 'text/html');
         const body = doc.body;
+        if (!body || !body.innerHTML.trim()) return null;
 
-        if (body) {
-            // Remove absolute positioning from pasted elements
-            body.querySelectorAll('[style]').forEach(el => {
-                el.style.position = '';
-                el.style.left = '';
-                el.style.top = '';
-            });
-            cleaned = body.innerHTML;
+        // Check raw HTML for absolute positioning (before cleanHTML strips styles)
+        const rawDoc = new DOMParser().parseFromString(clipHTML, 'text/html');
+        const rawBody = rawDoc.body;
+
+        // Tier 1: Absolute positioned elements (OneNote canvas layout)
+        const rawAbs = rawBody ? rawBody.querySelectorAll('[style*="position:absolute"], [style*="position: absolute"]') : [];
+        if (rawAbs.length > 1) {
+            const results = Array.from(rawAbs).map(el => {
+                el.style.position = ''; el.style.left = ''; el.style.top = ''; el.style.width = '';
+                let h = cleanHTML(el.innerHTML);
+                h = h.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
+                return h.trim();
+            }).filter(h => h.length > 0);
+            if (results.length > 1) return results;
         }
 
-        // Remove excessive whitespace/empty paragraphs
-        cleaned = cleaned.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
-        cleaned = cleaned.trim();
+        // Tier 2: Top-level divs/sections with content
+        const topDivs = Array.from(body.children).filter(el => {
+            if (el.tagName !== 'DIV' && el.tagName !== 'SECTION') return false;
+            return el.textContent.trim().length > 0 || el.querySelector('img') || el.querySelector('table');
+        });
+        if (topDivs.length > 1) {
+            const results = topDivs.map(el => {
+                let h = el.innerHTML;
+                h = h.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
+                return h.trim();
+            }).filter(h => h.length > 0);
+            if (results.length > 1) return results;
+        }
 
-        if (cleaned) {
-            document.execCommand('insertHTML', false, cleaned);
+        // Tier 3: Split on <br clear="all"> separators
+        const brBlocks = []; let cur = [];
+        for (const node of body.childNodes) {
+            if (node.nodeType === 3 && !node.textContent.trim()) continue;
+            const tag = node.tagName ? node.tagName.toLowerCase() : '';
+            if (tag === 'br' && node.getAttribute && node.getAttribute('clear')) {
+                if (cur.length) { brBlocks.push(cur); cur = []; }
+                continue;
+            }
+            cur.push(node);
+        }
+        if (cur.length) brBlocks.push(cur);
+        if (brBlocks.length > 1) {
+            const results = brBlocks.map(nodes => {
+                const div = document.createElement('div');
+                nodes.forEach(n => div.appendChild(n.cloneNode(true)));
+                let h = div.innerHTML;
+                h = h.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
+                return h.trim();
+            }).filter(h => h.length > 0);
+            if (results.length > 1) return results;
+        }
+
+        // Tier 4: Correlate HTML structure with plain text section boundaries
+        if (clipText) {
+            const textSections = clipText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+            if (textSections.length > 1) {
+                const children = Array.from(body.childNodes).filter(n => {
+                    if (n.nodeType === 3) return n.textContent.trim().replace(/\u00a0/g, '').length > 0;
+                    if (n.nodeType === 1) {
+                        const t = n.textContent.trim().replace(/\u00a0/g, '');
+                        return t.length > 0 || n.querySelector('img') || n.querySelector('table');
+                    }
+                    return false;
+                });
+                if (children.length >= textSections.length) {
+                    const groups = [[]];
+                    let sIdx = 0;
+                    for (const node of children) {
+                        const nodeText = node.textContent.trim().replace(/\u00a0/g, '');
+                        if (!nodeText) continue;
+                        if (sIdx < textSections.length - 1) {
+                            const nextFirst = textSections[sIdx + 1].split('\n')[0].trim();
+                            const normNode = nodeText.replace(/^[^\w]+/, '').substring(0, 40);
+                            const normNext = nextFirst.replace(/^[^\w]+/, '').substring(0, 40);
+                            if (normNode && normNext && normNode.length > 2 &&
+                                (normNode.startsWith(normNext) || normNext.startsWith(normNode))) {
+                                if (groups[groups.length - 1].length > 0) {
+                                    sIdx++;
+                                    groups.push([]);
+                                }
+                            }
+                        }
+                        groups[groups.length - 1].push(node);
+                    }
+                    if (groups.length === textSections.length && groups.every(g => g.length > 0)) {
+                        return groups.map(nodes => {
+                            const div = document.createElement('div');
+                            nodes.forEach(n => div.appendChild(n.cloneNode(true)));
+                            return div.innerHTML.trim();
+                        });
+                    }
+                }
+            }
+        }
+
+        // Tier 5: Split on empty paragraphs (including &nbsp;-only)
+        const allEls = Array.from(body.children);
+        const emptyGroups = []; let curGroup = [];
+        for (const el of allEls) {
+            const text = el.textContent.trim().replace(/\u00a0/g, '');
+            const isEmpty = !text && !el.querySelector('img') && !el.querySelector('table');
+            if (isEmpty && curGroup.length > 0) {
+                emptyGroups.push(curGroup); curGroup = [];
+            } else if (!isEmpty) {
+                curGroup.push(el);
+            }
+        }
+        if (curGroup.length > 0) emptyGroups.push(curGroup);
+        if (emptyGroups.length > 1) {
+            const results = emptyGroups.map(nodes => {
+                const div = document.createElement('div');
+                nodes.forEach(n => div.appendChild(n.cloneNode(true)));
+                return div.innerHTML.trim();
+            }).filter(h => h.length > 0);
+            if (results.length > 1) return results;
+        }
+
+        // Tier 6: Split HTML string by searching for each section's header text
+        if (clipText) {
+            const textSections = clipText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+            if (textSections.length > 1) {
+                const html = body.innerHTML;
+                const chunks = [];
+                let lastSplit = 0;
+                let ok = true;
+                for (let i = 1; i < textSections.length; i++) {
+                    const header = textSections[i].split('\n')[0].trim();
+                    if (!header || header.length < 3) { ok = false; break; }
+                    const pos = html.indexOf(header, lastSplit + 1);
+                    if (pos < 0) { ok = false; break; }
+                    // Back up to the start of the enclosing HTML tag
+                    let splitAt = pos;
+                    for (let j = pos - 1; j >= lastSplit; j--) {
+                        if (html[j] === '<') { splitAt = j; break; }
+                        if (html[j] === '>') break;
+                    }
+                    chunks.push(html.substring(lastSplit, splitAt).trim());
+                    lastSplit = splitAt;
+                }
+                if (ok) {
+                    chunks.push(html.substring(lastSplit).trim());
+                    const filtered = chunks.filter(c => {
+                        const tmp = document.createElement('div');
+                        tmp.innerHTML = c;
+                        return tmp.textContent.trim().replace(/\u00a0/g, '').length > 0;
+                    });
+                    if (filtered.length >= 2) return filtered;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // ── Paste Handler (OneNote clipboard cleanup) ──
+    document.addEventListener('paste', (e) => {
+        const clipHTML = e.clipboardData.getData('text/html');
+        const clipText = e.clipboardData.getData('text/plain');
+        const targetContent = e.target.closest('.note-content');
+
+        // Check if this paste was triggered from a canvas cursor position
+        const pendingCursor = window._pendingPasteAtCursor;
+        window._pendingPasteAtCursor = null;
+        const pastingOnCanvas = !targetContent || !!pendingCursor;
+
+        // ── Canvas paste: split into separate note boxes ──
+        if (pastingOnCanvas && (clipHTML || clipText)) {
+            const canvas = document.getElementById('canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            let baseX, baseY;
+            if (pendingCursor) {
+                baseX = pendingCursor.x;
+                baseY = pendingCursor.y;
+            } else if (canvasCursorActive) {
+                baseX = canvasCursorX;
+                baseY = canvasCursorY;
+                hideCanvasCursor();
+            } else {
+                baseX = canvas.scrollLeft + canvasRect.width / 2 - 150;
+                baseY = canvas.scrollTop + 40;
+            }
+
+            // Try to split into multiple notes
+            let noteHTMLs = null;
+
+            // Strategy 1: HTML structural splitting (preserves formatting)
+            if (clipHTML) {
+                try { noteHTMLs = splitClipboardHTML(clipHTML, clipText); }
+                catch (ex) { console.warn('splitClipboardHTML error:', ex); }
+            }
+
+            // Strategy 2: Plain text splitting (loses formatting, last resort)
+            if (!noteHTMLs && clipText) {
+                const sections = clipText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+                if (sections.length > 1) {
+                    noteHTMLs = sections.map(section =>
+                        section.split('\n').map(line =>
+                            '<div>' + line.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+                        ).join('')
+                    );
+                }
+            }
+
+            // Create separate note boxes
+            if (noteHTMLs && noteHTMLs.length > 1) {
+                e.preventDefault();
+                clearSelection();
+                const noteWidth = 320;
+                const gapX = 30;
+                const gapY = 20;
+                const maxX = canvas.scrollLeft + canvasRect.width - noteWidth - 20;
+                let curX = baseX, curY = baseY, rowMaxH = 0;
+                noteHTMLs.forEach((html) => {
+                    // Wrap to next row if this note would go off-screen
+                    if (curX > baseX && curX + noteWidth > maxX) {
+                        curX = baseX;
+                        curY += rowMaxH + gapY;
+                        rowMaxH = 0;
+                    }
+                    const box = createNoteBox(curX, curY, noteWidth, null, '');
+                    const content = box.querySelector('.note-content');
+                    content.focus();
+                    document.execCommand('insertHTML', false, html);
+                    addToSelection(box);
+                    const height = box.offsetHeight || 100;
+                    if (height > rowMaxH) rowMaxH = height;
+                    curX += noteWidth + gapX;
+                });
+                if (selectedBoxes.size > 0) {
+                    const last = [...selectedBoxes][selectedBoxes.size - 1];
+                    last.classList.add('selected');
+                    activeBox = last;
+                }
+                scheduleSave();
+                return;
+            }
+
+            // Single note at cursor position — create empty note, focus, insertHTML
+            // (matches the "click, space, paste" flow that preserves formatting)
+            if (pendingCursor) {
+                e.preventDefault();
+                let html;
+                if (clipHTML) {
+                    const cleaned = cleanHTML(clipHTML);
+                    const p = new DOMParser();
+                    const d = p.parseFromString(cleaned, 'text/html');
+                    if (d.body) {
+                        d.body.querySelectorAll('[style]').forEach(el => {
+                            el.style.position = '';
+                            el.style.left = '';
+                            el.style.top = '';
+                        });
+                    }
+                    html = d.body ? d.body.innerHTML.trim() : '';
+                    html = html.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
+                } else if (clipText) {
+                    html = clipText.split('\n').map(line =>
+                        '<div>' + line.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+                    ).join('');
+                }
+                if (html) {
+                    const box = createNoteBox(pendingCursor.x - 10, pendingCursor.y - 10, 320, null, '');
+                    selectOnly(box);
+                    const content = box.querySelector('.note-content');
+                    content.focus();
+                    document.execCommand('insertHTML', false, html);
+                    scheduleSave();
+                }
+                return;
+            }
+        }
+
+        if (!clipHTML || !targetContent) return;
+
+        // Clean HTML when pasting into an existing note (strips Office/layout noise)
+
+        const cleaned = cleanHTML(clipHTML);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(cleaned, 'text/html');
+        const body = doc.body;
+        if (!body || !body.innerHTML.trim()) return;
+
+        e.preventDefault();
+        body.querySelectorAll('[style]').forEach(el => {
+            el.style.position = '';
+            el.style.left = '';
+            el.style.top = '';
+        });
+
+        let singleHTML = body.innerHTML;
+        singleHTML = singleHTML.replace(/(<p[^>]*>)\s*(&nbsp;)?\s*(<\/p>)/gi, '');
+        singleHTML = singleHTML.trim();
+
+        if (singleHTML) {
+            document.execCommand('insertHTML', false, singleHTML);
             scheduleSave();
         }
     });
@@ -2234,10 +3477,13 @@
         }
     });
 
-    // Also support pasting images
+    // Also support pasting images (but only pure image pastes, not text copies
+    // that include a browser-generated bitmap)
     document.addEventListener('paste', function handleImagePaste(e) {
         const content = e.target.closest('.note-content');
         if (!content) return;
+        // If clipboard has HTML or plain text, it's a text copy — don't intercept
+        if (e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain')) return;
         const items = e.clipboardData.items;
         for (const item of items) {
             if (item.type.startsWith('image/')) {
@@ -2495,7 +3741,7 @@
                 return;
             }
             // Download cloud data to localStorage
-            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY];
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY];
             keys.forEach(key => {
                 if (data[key] !== undefined && data[key] !== null) {
                     localStorage.setItem(key, data[key]);
@@ -2522,7 +3768,7 @@
         statusEl.textContent = 'Saving...';
         try {
             const data = {};
-            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY];
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY];
             keys.forEach(key => {
                 const val = localStorage.getItem(key);
                 if (val !== null) data[key] = val;
