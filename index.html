@@ -1690,6 +1690,7 @@
         <span class="sn-title">Samsung Notes</span>
         <span id="voiceStatus"></span>
         <button id="btnGoogleTasks" class="gt-connect-btn" onclick="toggleGoogleTasks()" title="Connect Google Tasks">Connect Tasks</button>
+        <button id="btnRefreshTasks" class="sn-toolbar button" onclick="fetchGoogleTasks()" title="Refresh tasks" style="background:#e0e0e0;border:1px solid #bbb;border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;display:none;">Refresh</button>
         <button id="btnVoiceNote" onclick="toggleVoiceNote()" title="Tap to speak a note">&#127908;</button>
     </div>
     <div class="sn-list" id="snList"></div>
@@ -5026,6 +5027,7 @@
         }));
         updateGoogleTasksButton(true);
         fetchGoogleTasks();
+        if (activeTab === 'samsungNotes') startGoogleTasksRefresh();
     }
 
     function toggleGoogleTasks() {
@@ -5061,12 +5063,15 @@
 
     function updateGoogleTasksButton(connected) {
         const btn = document.getElementById('btnGoogleTasks');
+        const refreshBtn = document.getElementById('btnRefreshTasks');
         if (connected) {
             btn.textContent = 'Tasks Connected';
             btn.classList.add('connected');
+            refreshBtn.style.display = '';
         } else {
             btn.textContent = 'Connect Tasks';
             btn.classList.remove('connected');
+            refreshBtn.style.display = 'none';
         }
     }
 
