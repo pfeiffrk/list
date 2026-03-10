@@ -5002,23 +5002,36 @@
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/tasks.readonly',
-            callback: handleGoogleTokenResponse
+            callback: handleGoogleTokenResponse,
+            error_callback: function(err) {
+                // Silent refresh failed — user will need to click Connect Tasks
+                console.log('Google silent auth not available:', err);
+            }
         });
-        // Restore saved token
+        // Restore saved token or try silent refresh
+        let restored = false;
         try {
             const saved = JSON.parse(localStorage.getItem(GT_TOKEN_KEY));
             if (saved && saved.token && saved.expiry > Date.now()) {
                 googleAccessToken = saved.token;
                 googleTokenExpiry = saved.expiry;
                 updateGoogleTasksButton(true);
+                restored = true;
+                fetchGoogleTasks();
             }
         } catch {}
+        // If no valid saved token, try silent refresh (no popup)
+        if (!restored) {
+            try {
+                tokenClient.requestAccessToken({ prompt: '' });
+            } catch {}
+        }
     }
 
     function handleGoogleTokenResponse(response) {
         if (response.error) {
-            console.warn('Google auth error:', response.error);
-            showToast('Google sign-in failed: ' + response.error);
+            // Silent refresh failed — not an error worth showing
+            console.log('Google auth needs interactive sign-in');
             return;
         }
         googleAccessToken = response.access_token;
