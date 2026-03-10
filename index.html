@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1158,21 +1159,30 @@
             padding: 14px 16px;
             margin-bottom: 10px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: box-shadow 0.15s;
+        }
+        .sn-note:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
+        .sn-note .sn-header {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
-        }
-        .sn-note .sn-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-            margin-top: 2px;
+            gap: 10px;
         }
         .sn-note .sn-body { flex: 1; min-width: 0; }
-        .sn-note .sn-text {
+        .sn-note .sn-title-text {
             font-size: 14px;
+            font-weight: 600;
             color: #333;
-            line-height: 1.5;
-            word-wrap: break-word;
+            margin-bottom: 4px;
+        }
+        .sn-note .sn-preview {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         .sn-note .sn-time {
             font-size: 11px;
@@ -1189,18 +1199,94 @@
             flex-shrink: 0;
         }
         .sn-note .sn-delete:hover { color: #c44; }
-        #btnAddSN {
+
+        /* ── Samsung Notes Setup Card ── */
+        .sn-setup-card {
+            max-width: 480px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 28px 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .sn-setup-card h3 {
+            font-size: 17px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .sn-setup-card p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .sn-steps {
+            margin-bottom: 18px;
+        }
+        .sn-step {
+            font-size: 13px;
+            color: #444;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            line-height: 1.5;
+        }
+        .sn-step:last-child { border-bottom: none; }
+        .sn-setup-field {
+            margin-bottom: 16px;
+        }
+        .sn-setup-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .sn-setup-field input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-bottom: 4px;
+        }
+        .sn-setup-field input:focus { outline: none; border-color: #4a90d9; }
+        .sn-setup-field a {
+            font-size: 12px;
+            color: #4a90d9;
+        }
+        .sn-connect-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .sn-connect-btn:hover { background: #3a7bc8; }
+        .sn-loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 14px;
+        }
+        .sn-toolbar button.sn-tb-btn {
             background: #e0e0e0;
             border: 1px solid #bbb;
             border-radius: 4px;
-            padding: 6px 14px;
-            font-size: 13px;
+            padding: 6px 12px;
+            font-size: 12px;
             cursor: pointer;
             font-family: inherit;
             color: #333;
         }
-        #btnAddSN:hover { background: #d0d0d0; }
-        #addNoteOverlay {
+        .sn-toolbar button.sn-tb-btn:hover { background: #d0d0d0; }
+
+        /* ── Note Content Modal ── */
+        #noteContentOverlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -1209,10 +1295,110 @@
             justify-content: center;
             align-items: center;
         }
-        #addNoteOverlay.show { display: flex; }
+        #noteContentOverlay.show { display: flex; }
+        .note-content-box {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .note-content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid #eee;
+        }
+        .note-content-header h3 {
+            font-size: 16px;
+            color: #333;
+            flex: 1;
+            margin: 0;
+        }
+        .note-content-header button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #888;
+            padding: 0 4px;
+        }
+        .note-content-header button:hover { color: #333; }
+        .note-content-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .note-content-body img { max-width: 100%; height: auto; }
+
+        /* ── Google Tasks ── */
+        .gt-section-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a90d9;
+            padding: 14px 0 8px 0;
+            border-bottom: 2px solid #4a90d9;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .gt-section-header .gt-sync-status {
+            font-weight: 400;
+            font-size: 11px;
+            color: #999;
+        }
+        .gt-task {
+            background: #fff;
+            border-radius: 6px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border-left: 3px solid #4a90d9;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .gt-task.completed { opacity: 0.55; border-left-color: #aaa; }
+        .gt-task .gt-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4a90d9;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .gt-task.completed .gt-checkbox { background: #4a90d9; border-color: #4a90d9; }
+        .gt-task .gt-body { flex: 1; min-width: 0; }
+        .gt-task .gt-title { font-size: 14px; color: #333; margin-bottom: 2px; }
+        .gt-task.completed .gt-title { text-decoration: line-through; color: #999; }
+        .gt-task .gt-notes { font-size: 12px; color: #666; margin-top: 4px; }
+        .gt-task .gt-due { font-size: 11px; color: #e67e22; margin-top: 4px; }
+        .gt-task .gt-time { font-size: 11px; color: #999; margin-top: 4px; }
+        .gt-connect-btn {
+            background: #fff;
+            border: 1px solid #4a90d9;
+            color: #4a90d9;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .gt-connect-btn:hover { background: #4a90d9; color: #fff; }
+        .gt-connect-btn.connected { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
 
         @media (max-width: 768px) {
             .tab-btn { padding: 10px 16px; font-size: 13px; }
+            .sn-setup-card { margin: 16px; padding: 20px; }
+            .note-content-box { width: 95%; max-height: 90vh; }
         }
     </style>
 </head>
@@ -1444,6 +1630,11 @@
         <div class="s-danger">
             <button onclick="removeEncryption()">Remove password and encryption...</button>
         </div>
+        <div class="s-danger" id="settingsGoogleSection">
+            <label style="font-size:13px;color:#444;margin-bottom:4px;">Google Tasks Client ID:</label>
+            <input type="text" id="settingsGoogleClientId" placeholder="xxxx.apps.googleusercontent.com" style="width:100%;padding:8px 10px;font-size:12px;border:1px solid #ccc;border-radius:4px;font-family:monospace;margin-bottom:4px;">
+            <div style="font-size:11px;color:#888;">Create at <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#4a90d9;">Google Cloud Console</a>. Enable "Tasks API", create OAuth Client ID (Web), add your site URL as authorized JS origin.</div>
+        </div>
         <div class="s-danger" id="settingsAccountSection" style="display:none;">
             <div style="font-size:12px;color:#888;margin-bottom:6px;" id="settingsAccountEmail"></div>
             <button onclick="firebaseSignOut()">Sign out and clear local data...</button>
@@ -1498,23 +1689,10 @@
     <div class="sn-toolbar">
         <span class="sn-title">Samsung Notes</span>
         <span id="voiceStatus"></span>
-        <button id="btnAddSN" onclick="openAddNoteModal()" title="Add or paste a note">+ Add</button>
+        <button id="btnGoogleTasks" class="gt-connect-btn" onclick="toggleGoogleTasks()" title="Connect Google Tasks">Connect Tasks</button>
         <button id="btnVoiceNote" onclick="toggleVoiceNote()" title="Tap to speak a note">&#127908;</button>
     </div>
     <div class="sn-list" id="snList"></div>
-</div>
-
-<!-- Add Note Modal -->
-<div id="addNoteOverlay" class="modal-overlay" onclick="if(event.target===this)closeAddNoteModal()">
-    <div class="modal-box" style="width:420px;">
-        <h3>Add Note</h3>
-        <p style="font-size:12px;color:#888;margin-bottom:10px;">Paste text from Samsung Notes or type a new note</p>
-        <textarea id="addNoteText" placeholder="Paste or type your note here..." rows="6" style="width:100%;padding:10px;font-size:14px;border:1px solid #ccc;border-radius:4px;font-family:inherit;resize:vertical;"></textarea>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-            <button class="btn-secondary" onclick="closeAddNoteModal()" style="padding:8px 18px;font-size:13px;background:#e0e0e0;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-family:inherit;">Cancel</button>
-            <button class="btn-primary" onclick="saveAddedNote()" style="padding:8px 18px;font-size:13px;background:#4a90d9;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;">Save Note</button>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -1720,6 +1898,7 @@
         document.getElementById('settingsNewPw').value = '';
         document.getElementById('settingsNewPw2').value = '';
         document.getElementById('settingsPwError').textContent = '';
+        document.getElementById('settingsGoogleClientId').value = getGoogleClientId();
         // Update account section
         const acctSection = document.getElementById('settingsAccountSection');
         const acctEmail = document.getElementById('settingsAccountEmail');
@@ -1741,6 +1920,15 @@
         s.lockMinutes = document.getElementById('settingsTimeout').value;
         putSettings(s);
         resetLockTimer();
+
+        // Handle Google Client ID change
+        const newGoogleId = document.getElementById('settingsGoogleClientId').value.trim();
+        const oldGoogleId = getGoogleClientId();
+        if (newGoogleId !== oldGoogleId) {
+            setGoogleClientId(newGoogleId);
+            disconnectGoogleTasks();
+            if (newGoogleId) initGoogleTasksAuth();
+        }
 
         // Handle password change
         const oldPw = document.getElementById('settingsOldPw').value;
@@ -4631,10 +4819,15 @@
         snView.classList.toggle('active', tab === 'samsungNotes');
         if (tab === 'samsungNotes') {
             renderSamsungNotes();
+            if (googleAccessToken && googleTokenExpiry > Date.now()) {
+                startGoogleTasksRefresh();
+            }
+        } else {
+            stopGoogleTasksRefresh();
         }
     }
 
-    // ── Samsung Notes ──
+    // ── Samsung Notes (Voice) ──
     const SN_KEY = 'samsung_notes';
     let samsungNotes = [];
     let voiceRecognition = null;
@@ -4652,22 +4845,52 @@
 
     function renderSamsungNotes() {
         const list = document.getElementById('snList');
-        if (samsungNotes.length === 0) {
-            list.innerHTML = '<div class="sn-empty">No notes yet.<br>Tap the microphone to speak a note.</div>';
-            return;
+        let html = '';
+
+        // Section 1: Google Tasks
+        if (googleAccessToken && googleTasksCache.length > 0) {
+            const lastSynced = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            html += '<div class="gt-section-header"><span>Google Tasks</span><span class="gt-sync-status">Synced ' + lastSynced + '</span></div>';
+            const incomplete = googleTasksCache.filter(t => t.status === 'needsAction');
+            const completed = googleTasksCache.filter(t => t.status === 'completed');
+            const ordered = [...incomplete, ...completed];
+            html += ordered.map(task => {
+                const isCompleted = task.status === 'completed';
+                const dueStr = task.due ? formatGoogleDue(task.due) : '';
+                return '<div class="gt-task' + (isCompleted ? ' completed' : '') + '">' +
+                    '<div class="gt-checkbox"></div>' +
+                    '<div class="gt-body">' +
+                        '<div class="gt-title">' + escapeHtmlSN(task.title) + '</div>' +
+                        (task.notes ? '<div class="gt-notes">' + escapeHtmlSN(task.notes) + '</div>' : '') +
+                        (dueStr ? '<div class="gt-due">Due: ' + dueStr + '</div>' : '') +
+                        '<div class="gt-time">' + escapeHtmlSN(task.listName) + ' &middot; ' + formatGoogleUpdated(task.updated) + '</div>' +
+                    '</div></div>';
+            }).join('');
+        } else if (googleAccessToken && googleTasksCache.length === 0) {
+            html += '<div class="gt-section-header"><span>Google Tasks</span></div>';
+            html += '<div class="sn-empty">No tasks found. Try saying "Add a task" to Gemini.</div>';
         }
-        // Show newest first
-        const sorted = [...samsungNotes].sort((a, b) => b.createdAt - a.createdAt);
-        list.innerHTML = sorted.map(note => `
-            <div class="sn-note">
-                <span class="sn-icon">&#127908;</span>
-                <div class="sn-body">
-                    <div class="sn-text">${escapeHtmlSN(note.text)}</div>
-                    <div class="sn-time">${formatTimeSN(note.createdAt)}</div>
-                </div>
-                <button class="sn-delete" onclick="deleteSamsungNote('${note.id}')" title="Delete">&times;</button>
-            </div>
-        `).join('');
+
+        // Section 2: Voice notes
+        if (samsungNotes.length > 0) {
+            if (html) html += '<div class="gt-section-header" style="color:#666;border-color:#ccc;"><span>Voice Notes</span></div>';
+            const sorted = [...samsungNotes].sort((a, b) => b.createdAt - a.createdAt);
+            html += sorted.map(note =>
+                '<div class="sn-note"><div class="sn-header">' +
+                    '<div class="sn-body">' +
+                        '<div class="sn-preview">' + escapeHtmlSN(note.text) + '</div>' +
+                        '<div class="sn-time">' + formatTimeSN(note.createdAt) + '</div>' +
+                    '</div>' +
+                    '<button class="sn-delete" onclick="deleteSamsungNote(\'' + note.id + '\')" title="Delete">&times;</button>' +
+                '</div></div>'
+            ).join('');
+        }
+
+        if (!html) {
+            html = '<div class="sn-empty">No notes yet.<br>Connect Google Tasks or tap the mic to speak a note.</div>';
+        }
+
+        list.innerHTML = html;
     }
 
     function escapeHtmlSN(str) {
@@ -4712,8 +4935,6 @@
             btn.classList.remove('listening');
             status.textContent = '';
             voiceRecognition = null;
-
-            // Add the note
             samsungNotes.push({
                 id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
                 text: transcript,
@@ -4728,7 +4949,6 @@
             voiceRecognition = null;
             if (event.error === 'not-allowed') {
                 status.textContent = 'Mic access denied';
-                alert('Microphone access denied. Please allow microphone permission in your browser settings.');
             } else if (event.error !== 'aborted') {
                 status.textContent = 'Error: ' + event.error;
             } else {
@@ -4745,39 +4965,206 @@
         voiceRecognition.start();
     }
 
-    function openAddNoteModal() {
-        document.getElementById('addNoteText').value = '';
-        document.getElementById('addNoteOverlay').classList.add('show');
-        setTimeout(() => document.getElementById('addNoteText').focus(), 50);
-    }
-
-    function closeAddNoteModal() {
-        document.getElementById('addNoteOverlay').classList.remove('show');
-    }
-
-    function saveAddedNote() {
-        const text = document.getElementById('addNoteText').value.trim();
-        if (!text) { document.getElementById('addNoteText').focus(); return; }
-        samsungNotes.push({
-            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
-            text: text,
-            createdAt: Date.now()
-        });
-        saveSamsungNotes();
-        renderSamsungNotes();
-        closeAddNoteModal();
-    }
-
     function deleteSamsungNote(id) {
         samsungNotes = samsungNotes.filter(n => n.id !== id);
         saveSamsungNotes();
         renderSamsungNotes();
     }
 
+    // ── Google Tasks ──
+    const GT_CLIENT_ID_KEY = 'google_tasks_client_id';
+    const GT_TOKEN_KEY = 'google_tasks_token';
+    const GT_TASKS_CACHE_KEY = 'google_tasks_cache';
+    let googleAccessToken = null;
+    let googleTokenExpiry = 0;
+    let googleTasksRefreshTimer = null;
+    let googleTasksCache = [];
+    let tokenClient = null;
+
+    function getGoogleClientId() {
+        return localStorage.getItem(GT_CLIENT_ID_KEY) || '';
+    }
+
+    function setGoogleClientId(clientId) {
+        localStorage.setItem(GT_CLIENT_ID_KEY, clientId.trim());
+    }
+
+    function initGoogleTasksAuth() {
+        const clientId = getGoogleClientId();
+        if (!clientId) return;
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+            setTimeout(initGoogleTasksAuth, 500);
+            return;
+        }
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/tasks.readonly',
+            callback: handleGoogleTokenResponse
+        });
+        // Restore saved token
+        try {
+            const saved = JSON.parse(localStorage.getItem(GT_TOKEN_KEY));
+            if (saved && saved.token && saved.expiry > Date.now()) {
+                googleAccessToken = saved.token;
+                googleTokenExpiry = saved.expiry;
+                updateGoogleTasksButton(true);
+            }
+        } catch {}
+    }
+
+    function handleGoogleTokenResponse(response) {
+        if (response.error) {
+            console.warn('Google auth error:', response.error);
+            showToast('Google sign-in failed: ' + response.error);
+            return;
+        }
+        googleAccessToken = response.access_token;
+        googleTokenExpiry = Date.now() + (response.expires_in * 1000) - 60000;
+        localStorage.setItem(GT_TOKEN_KEY, JSON.stringify({
+            token: googleAccessToken,
+            expiry: googleTokenExpiry
+        }));
+        updateGoogleTasksButton(true);
+        fetchGoogleTasks();
+    }
+
+    function toggleGoogleTasks() {
+        const clientId = getGoogleClientId();
+        if (!clientId) {
+            showToast('Set your Google Client ID in Settings first');
+            openSettings();
+            return;
+        }
+        if (googleAccessToken && googleTokenExpiry > Date.now()) {
+            disconnectGoogleTasks();
+        } else {
+            if (!tokenClient) initGoogleTasksAuth();
+            if (tokenClient) {
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        }
+    }
+
+    function disconnectGoogleTasks() {
+        if (googleAccessToken) {
+            try { google.accounts.oauth2.revoke(googleAccessToken); } catch {}
+        }
+        googleAccessToken = null;
+        googleTokenExpiry = 0;
+        googleTasksCache = [];
+        localStorage.removeItem(GT_TOKEN_KEY);
+        localStorage.removeItem(GT_TASKS_CACHE_KEY);
+        stopGoogleTasksRefresh();
+        updateGoogleTasksButton(false);
+        if (activeTab === 'samsungNotes') renderSamsungNotes();
+    }
+
+    function updateGoogleTasksButton(connected) {
+        const btn = document.getElementById('btnGoogleTasks');
+        if (connected) {
+            btn.textContent = 'Tasks Connected';
+            btn.classList.add('connected');
+        } else {
+            btn.textContent = 'Connect Tasks';
+            btn.classList.remove('connected');
+        }
+    }
+
+    async function fetchGoogleTasks() {
+        if (!googleAccessToken) return;
+        if (googleTokenExpiry <= Date.now()) {
+            if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+            return;
+        }
+        const headers = { 'Authorization': 'Bearer ' + googleAccessToken };
+        try {
+            const listsResp = await fetch('https://www.googleapis.com/tasks/v1/users/@me/lists', { headers });
+            if (listsResp.status === 401) {
+                googleAccessToken = null;
+                localStorage.removeItem(GT_TOKEN_KEY);
+                updateGoogleTasksButton(false);
+                showToast('Google session expired. Tap "Connect Tasks" to reconnect.');
+                return;
+            }
+            if (!listsResp.ok) throw new Error('Lists fetch failed: ' + listsResp.status);
+            const listsData = await listsResp.json();
+            const taskLists = listsData.items || [];
+
+            const allTasks = [];
+            const fetches = taskLists.map(async (tl) => {
+                const resp = await fetch(
+                    'https://www.googleapis.com/tasks/v1/lists/' + tl.id + '/tasks?maxResults=100&showCompleted=true&showHidden=false',
+                    { headers }
+                );
+                if (!resp.ok) return;
+                const data = await resp.json();
+                (data.items || []).forEach(task => {
+                    if (!task.title) return;
+                    allTasks.push({
+                        id: task.id,
+                        listName: tl.title,
+                        title: task.title,
+                        notes: task.notes || '',
+                        status: task.status,
+                        due: task.due || null,
+                        updated: task.updated
+                    });
+                });
+            });
+            await Promise.all(fetches);
+
+            allTasks.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+            googleTasksCache = allTasks;
+            localStorage.setItem(GT_TASKS_CACHE_KEY, JSON.stringify(allTasks));
+            if (activeTab === 'samsungNotes') renderSamsungNotes();
+        } catch (err) {
+            console.warn('Google Tasks fetch error:', err);
+        }
+    }
+
+    function loadGoogleTasksCache() {
+        try {
+            googleTasksCache = JSON.parse(localStorage.getItem(GT_TASKS_CACHE_KEY)) || [];
+        } catch { googleTasksCache = []; }
+    }
+
+    function startGoogleTasksRefresh() {
+        if (googleTasksRefreshTimer) return;
+        fetchGoogleTasks();
+        googleTasksRefreshTimer = setInterval(() => {
+            if (activeTab === 'samsungNotes' && googleAccessToken) {
+                fetchGoogleTasks();
+            }
+        }, 60000);
+    }
+
+    function stopGoogleTasksRefresh() {
+        if (googleTasksRefreshTimer) {
+            clearInterval(googleTasksRefreshTimer);
+            googleTasksRefreshTimer = null;
+        }
+    }
+
+    function formatGoogleDue(due) {
+        const d = new Date(due);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatGoogleUpdated(updated) {
+        const d = new Date(updated);
+        const diff = Date.now() - d;
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
     // ── Init ──
     loadSamsungNotes();
+    loadGoogleTasksCache();
     buildTableGrid();
     initFirebase();
+    initGoogleTasksAuth();
 </script>
 </body>
 </html>
