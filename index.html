@@ -46,15 +46,13 @@
         #navbar button:hover { background: #d0d0d0; }
         #nbVersionPanel {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 500px;
-            max-height: 70vh;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100vh;
             background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-left: 1px solid #ccc;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.15);
             z-index: 5000;
             display: flex;
             flex-direction: column;
@@ -387,7 +385,7 @@
             color: #155724;
         }
         #nbVersionBanner.show { display: flex; }
-        #nbVersionBanner span { flex: 1; }
+        #nbVersionBanner span { margin-right: 10px; }
         #nbVersionBanner button {
             padding: 4px 12px;
             font-size: 12px;
@@ -779,6 +777,24 @@
             background: #cde;
             border-color: #8ab;
         }
+        .table-menu-item {
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+            white-space: nowrap;
+        }
+        .table-menu-item:hover { background: #e8e8e8; }
+        .table-menu-item.disabled {
+            color: #bbb;
+            cursor: default;
+            pointer-events: none;
+        }
+        .table-menu-sep {
+            height: 1px;
+            background: #ddd;
+            margin: 3px 0;
+        }
 
         /* ── Paragraph Spacing Popup ── */
         #paraSpacing {
@@ -932,7 +948,8 @@
         #noteCtxMenu .ctx-item:hover {
             background: #e8f0fb;
         }
-        #noteCtxMenu .ctx-item.disabled {
+        #noteCtxMenu .ctx-item.disabled,
+        #shapeCtxMenu .ctx-item.disabled {
             color: #bbb;
             cursor: default;
         }
@@ -944,9 +961,271 @@
             background: #ddd;
             margin: 4px 0;
         }
+
+        /* ── Shape Boxes ── */
+        .shape-box {
+            position: absolute;
+            z-index: 1;
+            cursor: move;
+            user-select: none;
+        }
+        .shape-box svg {
+            display: block;
+            pointer-events: none;
+        }
+        .shape-box.selected {
+            outline: 1px dashed #4a90d9;
+            z-index: 10;
+        }
+        .shape-box .sh-handle {
+            display: none;
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border: 1px solid #4a90d9;
+            z-index: 11;
+        }
+        .shape-box.selected .sh-handle { display: block; }
+        .shape-box .sh-nw { top: -4px; left: -4px; cursor: nw-resize; }
+        .shape-box .sh-ne { top: -4px; right: -4px; cursor: ne-resize; }
+        .shape-box .sh-sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .shape-box .sh-se { bottom: -4px; right: -4px; cursor: se-resize; }
+        #canvas.shape-drawing { cursor: crosshair; }
+
+        /* ── Shape Picker ── */
+        #shapePicker {
+            display: none;
+            position: absolute;
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 2000;
+            width: 220px;
+        }
+        #shapePicker .shape-types {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 3px;
+        }
+        #shapePicker .shape-types button {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        #shapePicker .shape-types button:hover { background: #e8e8e8; }
+        .shape-menu-label { font-size: 11px; color: #888; margin: 8px 0 3px; }
+        .shape-menu-label:first-child { margin-top: 0; }
+        .shape-opt { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .shape-opt input[type="color"] { width: 28px; height: 24px; border: 1px solid #ccc; padding: 0; cursor: pointer; }
+        .shape-opt select { font-size: 12px; padding: 2px; }
+        .shape-opt label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+
+        /* ── Shape Context Menu ── */
+        #shapeCtxMenu {
+            display: none;
+            position: fixed;
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 3000;
+            padding: 4px 0;
+            min-width: 160px;
+        }
+        #shapeCtxMenu .ctx-item {
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        #shapeCtxMenu .ctx-item:hover { background: #e8f0fb; }
+        #shapeCtxMenu .ctx-sep {
+            height: 1px;
+            background: #ddd;
+            margin: 4px 0;
+        }
+        /* ── Notebook View Wrapper ── */
+        #notebookView {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        #notebookView.hidden { display: none; }
+
+        /* ── Tab Bar ── */
+        #tabBar {
+            display: flex;
+            background: #e8e8e8;
+            border-bottom: 1px solid #d0d0d0;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-btn:hover { color: #333; background: rgba(0,0,0,0.03); }
+        .tab-btn.active {
+            color: #4a90d9;
+            border-bottom-color: #4a90d9;
+            background: #f3f3f3;
+        }
+
+        /* ── Samsung Notes View ── */
+        #samsungNotesView {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            background: #f5f6fa;
+        }
+        #samsungNotesView.active { display: flex; }
+        .sn-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #f3f3f3;
+            border-bottom: 1px solid #d0d0d0;
+        }
+        .sn-toolbar .sn-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+            flex: 1;
+        }
+        #btnVoiceNote {
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        #btnVoiceNote:hover { background: #3a7bc8; }
+        #btnVoiceNote.listening {
+            background: #d9534f;
+            animation: pulse-mic 1s ease-in-out infinite;
+        }
+        @keyframes pulse-mic {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.5); }
+            50% { box-shadow: 0 0 0 10px rgba(217, 83, 79, 0); }
+        }
+        #voiceStatus {
+            font-size: 13px;
+            color: #888;
+        }
+        .sn-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+        .sn-empty {
+            text-align: center;
+            color: #aaa;
+            font-size: 15px;
+            padding: 60px 20px;
+        }
+        .sn-note {
+            background: #fff;
+            border-radius: 6px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .sn-note .sn-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .sn-note .sn-body { flex: 1; min-width: 0; }
+        .sn-note .sn-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .sn-note .sn-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 6px;
+        }
+        .sn-note .sn-delete {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+        .sn-note .sn-delete:hover { color: #c44; }
+        #btnAddSN {
+            background: #e0e0e0;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            color: #333;
+        }
+        #btnAddSN:hover { background: #d0d0d0; }
+        #addNoteOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9000;
+            justify-content: center;
+            align-items: center;
+        }
+        #addNoteOverlay.show { display: flex; }
+
+        @media (max-width: 768px) {
+            .tab-btn { padding: 10px 16px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
+
+<!-- Tab Bar -->
+<div id="tabBar">
+    <button class="tab-btn active" onclick="switchTab('notebook')" id="tabNotebook">Notebook</button>
+    <button class="tab-btn" onclick="switchTab('samsungNotes')" id="tabSamsungNotes">Samsung Notes</button>
+</div>
+
+<!-- ═══ NOTEBOOK TAB CONTENT ═══ -->
+<div id="notebookView">
 
 <!-- Navbar -->
 <div id="navbar">
@@ -1001,6 +1280,8 @@
     <div class="sep"></div>
     <button onclick="toggleTablePicker(event)" title="Insert Table" id="btnTable">Table</button>
     <div class="sep"></div>
+    <button onclick="toggleShapePicker(event)" title="Draw Shapes" id="btnShapes">Shapes</button>
+    <div class="sep"></div>
     <button onclick="document.getElementById('imgFile').click()" title="Insert Image">Image</button>
     <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="insertImage(event)">
     <div class="sep"></div>
@@ -1021,8 +1302,18 @@
 
 <!-- Table Picker Popup -->
 <div id="tablePicker">
-    <div class="picker-label" id="pickerLabel">Select size</div>
-    <div id="tableGrid"></div>
+    <div class="table-menu">
+        <div class="table-menu-item" id="tmNewTable">New Table</div>
+        <div class="table-menu-sep"></div>
+        <div class="table-menu-item" id="tmDeleteTable">Delete Table</div>
+        <div class="table-menu-item" id="tmAddRow">Add Row</div>
+        <div class="table-menu-item" id="tmAddColumn">Add Column</div>
+    </div>
+    <div id="tableGridWrap" style="display:none">
+        <div class="picker-label" id="pickerLabel">Select size</div>
+        <div id="tableGrid"></div>
+        <div class="table-menu-item" id="tmGridBack" style="text-align:center;margin-top:4px;font-size:11px;">← Back</div>
+    </div>
 </div>
 
 <!-- Paragraph Spacing Popup -->
@@ -1067,6 +1358,51 @@
     <div class="ctx-sep"></div>
     <div class="ctx-item" onclick="tableCtxAction('deleteTable')" style="color:#c44;">Delete Table</div>
 </div>
+
+<!-- Shape Picker Popup -->
+<div id="shapePicker">
+    <div class="shape-menu-label">Shape</div>
+    <div class="shape-types">
+        <button data-shape="rect" title="Rectangle">&#9645;</button>
+        <button data-shape="roundrect" title="Rounded Rectangle">&#9723;</button>
+        <button data-shape="ellipse" title="Ellipse">&#9711;</button>
+        <button data-shape="triangle" title="Triangle">&#9651;</button>
+        <button data-shape="diamond" title="Diamond">&#9671;</button>
+        <button data-shape="line" title="Line">&#9585;</button>
+        <button data-shape="arrow" title="Arrow">&#10132;</button>
+        <button data-shape="pentagon" title="Pentagon">&#11015;</button>
+        <button data-shape="hexagon" title="Hexagon">&#11042;</button>
+    </div>
+    <div class="shape-menu-label">Fill</div>
+    <div class="shape-opt">
+        <input type="color" id="shapeFill" value="#4a90d9">
+        <label><input type="checkbox" id="shapeFillNone"> None</label>
+    </div>
+    <div class="shape-menu-label">Outline</div>
+    <div class="shape-opt">
+        <input type="color" id="shapeStroke" value="#333333">
+        <select id="shapeStrokeWidth">
+            <option value="1">1px</option>
+            <option value="2" selected>2px</option>
+            <option value="3">3px</option>
+            <option value="4">4px</option>
+            <option value="5">5px</option>
+        </select>
+    </div>
+</div>
+
+<!-- Shape Context Menu -->
+<div id="shapeCtxMenu">
+    <div class="ctx-item" id="sctxFill">Fill Color...</div>
+    <div class="ctx-item" id="sctxStroke">Outline Color...</div>
+    <div class="ctx-item" id="sctxWidth">Outline Width...</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="sctxDuplicate">Duplicate</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="sctxDelete" style="color:#c44;">Delete</div>
+</div>
+<input type="color" id="shapeCtxFillPicker" style="display:none">
+<input type="color" id="shapeCtxStrokePicker" style="display:none">
 
 <!-- Lock Screen -->
 <div id="lockScreen">
@@ -1151,6 +1487,32 @@
                 <div id="versionList"></div>
                 <div class="vp-note">Click to preview, "Restore" to roll back</div>
             </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- end #notebookView -->
+
+<!-- ═══ SAMSUNG NOTES TAB CONTENT ═══ -->
+<div id="samsungNotesView">
+    <div class="sn-toolbar">
+        <span class="sn-title">Samsung Notes</span>
+        <span id="voiceStatus"></span>
+        <button id="btnAddSN" onclick="openAddNoteModal()" title="Add or paste a note">+ Add</button>
+        <button id="btnVoiceNote" onclick="toggleVoiceNote()" title="Tap to speak a note">&#127908;</button>
+    </div>
+    <div class="sn-list" id="snList"></div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="addNoteOverlay" class="modal-overlay" onclick="if(event.target===this)closeAddNoteModal()">
+    <div class="modal-box" style="width:420px;">
+        <h3>Add Note</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:10px;">Paste text from Samsung Notes or type a new note</p>
+        <textarea id="addNoteText" placeholder="Paste or type your note here..." rows="6" style="width:100%;padding:10px;font-size:14px;border:1px solid #ccc;border-radius:4px;font-family:inherit;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+            <button class="btn-secondary" onclick="closeAddNoteModal()" style="padding:8px 18px;font-size:13px;background:#e0e0e0;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-family:inherit;">Cancel</button>
+            <button class="btn-primary" onclick="saveAddedNote()" style="padding:8px 18px;font-size:13px;background:#4a90d9;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;">Save Note</button>
         </div>
     </div>
 </div>
@@ -1791,6 +2153,21 @@
                 html: content.innerHTML
             });
         });
+        // Save shapes
+        document.querySelectorAll('.shape-box').forEach(box => {
+            data.push({
+                id: box.dataset.id,
+                type: 'shape',
+                shapeType: box.dataset.shapeType,
+                x: parseInt(box.style.left) || 0,
+                y: parseInt(box.style.top) || 0,
+                width: box.offsetWidth,
+                height: box.offsetHeight,
+                fill: box.dataset.fill,
+                stroke: box.dataset.stroke,
+                strokeWidth: parseFloat(box.dataset.strokeWidth)
+            });
+        });
         // Push previous state to undo stack if changed
         if (!isUndoing && page.boxes && page.boxes.length > 0) {
             const oldState = JSON.stringify(page.boxes);
@@ -1805,22 +2182,33 @@
 
     function loadCanvasForPage(pageId) {
         const canvas = document.getElementById('canvas');
-        // Remove existing note boxes
+        // Remove existing note boxes and shapes
         canvas.querySelectorAll('.note-box').forEach(b => b.remove());
+        canvas.querySelectorAll('.shape-box').forEach(b => b.remove());
         activeBox = null;
+        activeShape = null;
         selectedBoxes.clear();
         nextBoxId = 1;
+        nextShapeId = 1;
 
         const page = pages.find(p => p.id === pageId);
         if (!page) return;
 
         let maxId = 0;
+        let maxShapeId = 0;
         page.boxes.forEach(d => {
-            const numId = parseInt(d.id) || 0;
-            if (numId > maxId) maxId = numId;
-            createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
+            if (d.type === 'shape') {
+                const numId = parseInt(String(d.id).replace('s', '')) || 0;
+                if (numId > maxShapeId) maxShapeId = numId;
+                createShapeBox(d.x, d.y, d.width, d.height, d.shapeType, d.fill, d.stroke, d.strokeWidth, d.id);
+            } else {
+                const numId = parseInt(d.id) || 0;
+                if (numId > maxId) maxId = numId;
+                createNoteBox(d.x, d.y, d.width, d.height, d.html, d.id);
+            }
         });
         nextBoxId = maxId + 1;
+        nextShapeId = maxShapeId + 1;
 
         // Show/hide hint
         const hint = document.getElementById('canvas-hint');
@@ -1949,6 +2337,19 @@
             picker.style.display = 'none';
             return;
         }
+        // Show menu, hide grid
+        picker.querySelector('.table-menu').style.display = '';
+        document.getElementById('tableGridWrap').style.display = 'none';
+
+        // Detect if cursor is inside a table
+        const sel = window.getSelection();
+        const inTable = sel.rangeCount > 0 && sel.anchorNode && sel.anchorNode.parentElement &&
+                        sel.anchorNode.parentElement.closest && sel.anchorNode.parentElement.closest('table') &&
+                        activeBox && activeBox.contains(sel.anchorNode);
+        document.getElementById('tmDeleteTable').classList.toggle('disabled', !inTable);
+        document.getElementById('tmAddRow').classList.toggle('disabled', !inTable);
+        document.getElementById('tmAddColumn').classList.toggle('disabled', !inTable);
+
         const btn = e.currentTarget.getBoundingClientRect();
         picker.style.display = 'block';
         picker.style.left = btn.left + 'px';
@@ -2207,8 +2608,43 @@
 
         canvas.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return;
-            if (e.target.closest('.note-box') || e.target.closest('#toolbar') ||
-                e.target.closest('#tablePicker') || e.target.closest('#versionPanel')) return;
+            if (e.target.closest('.note-box') || e.target.closest('.shape-box') || e.target.closest('#toolbar') ||
+                e.target.closest('#tablePicker') || e.target.closest('#shapePicker') || e.target.closest('#versionPanel')) return;
+
+            deselectShape();
+
+            // Shape drawing mode
+            if (shapeDrawingMode) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const sx = e.clientX - rect.left + canvas.scrollLeft;
+                const sy = e.clientY - rect.top + canvas.scrollTop;
+                let shapeBox = null;
+                function onShapeMove(ev) {
+                    const cx = ev.clientX - rect.left + canvas.scrollLeft;
+                    const cy = ev.clientY - rect.top + canvas.scrollTop;
+                    const x = Math.min(sx, cx), y = Math.min(sy, cy);
+                    const w = Math.abs(cx - sx), h = Math.abs(cy - sy);
+                    if (!shapeBox && (w > 3 || h > 3)) {
+                        const fillVal = shapeDefaults.fillNone ? 'none' : shapeDefaults.fill;
+                        shapeBox = createShapeBox(x, y, w, h, shapeDrawingMode, fillVal, shapeDefaults.stroke, shapeDefaults.strokeWidth);
+                    }
+                    if (shapeBox) {
+                        shapeBox.style.left = x + 'px'; shapeBox.style.top = y + 'px';
+                        shapeBox.style.width = Math.max(w, 10) + 'px'; shapeBox.style.height = Math.max(h, 10) + 'px';
+                        updateShapeSVG(shapeBox);
+                    }
+                }
+                function onShapeUp() {
+                    document.removeEventListener('mousemove', onShapeMove);
+                    document.removeEventListener('mouseup', onShapeUp);
+                    if (shapeBox) { selectShapeBox(shapeBox); scheduleSave(); }
+                    cancelShapeDrawing();
+                }
+                document.addEventListener('mousemove', onShapeMove);
+                document.addEventListener('mouseup', onShapeUp);
+                return;
+            }
 
             canvasDown = true;
             selDragging = false;
@@ -2293,6 +2729,9 @@
         if (!e.target.closest('#tablePicker') && !e.target.closest('#btnTable')) {
             document.getElementById('tablePicker').style.display = 'none';
         }
+        if (!e.target.closest('#shapePicker') && !e.target.closest('#btnShapes')) {
+            document.getElementById('shapePicker').style.display = 'none';
+        }
         if (!e.target.closest('#paraSpacing') && !e.target.closest('#btnPara')) {
             document.getElementById('paraSpacing').style.display = 'none';
         }
@@ -2301,6 +2740,13 @@
         }
         if (!e.target.closest('#noteCtxMenu')) {
             document.getElementById('noteCtxMenu').style.display = 'none';
+        }
+        if (!e.target.closest('#shapeCtxMenu')) {
+            document.getElementById('shapeCtxMenu').style.display = 'none';
+        }
+        // Deselect shape when clicking on empty canvas or note
+        if (!e.target.closest('.shape-box') && !e.target.closest('#shapeCtxMenu') && !e.target.closest('#shapePicker')) {
+            deselectShape();
         }
     });
 
@@ -2510,12 +2956,18 @@
         }
     });
 
-    // ── Delete key removes all selected boxes ──
+    // ── Delete key removes all selected boxes/shapes ──
     document.addEventListener('keydown', (e) => {
-        if (e.key !== 'Delete' || selectedBoxes.size === 0) return;
-        // Don't delete if user is typing in a contenteditable area
+        if (e.key !== 'Delete') return;
         const active = document.activeElement;
         if (active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        if (activeShape) {
+            activeShape.remove();
+            activeShape = null;
+            scheduleSave();
+            return;
+        }
+        if (selectedBoxes.size === 0) return;
         selectedBoxes.forEach(b => b.remove());
         selectedBoxes.clear();
         activeBox = null;
@@ -2529,9 +2981,12 @@
     // ── Escape clears selection ──
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            if (shapeDrawingMode) { cancelShapeDrawing(); return; }
             hideCanvasCursor();
             clearSelection();
+            deselectShape();
             document.getElementById('noteCtxMenu').style.display = 'none';
+            document.getElementById('shapeCtxMenu').style.display = 'none';
         }
     });
 
@@ -3770,7 +4225,7 @@
                 return;
             }
             // Download cloud data to localStorage
-            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY];
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY, SN_KEY];
             keys.forEach(key => {
                 if (data[key] !== undefined && data[key] !== null) {
                     localStorage.setItem(key, data[key]);
@@ -3778,6 +4233,9 @@
                     localStorage.removeItem(key);
                 }
             });
+            // Reload Samsung Notes from updated localStorage
+            loadSamsungNotes();
+            if (activeTab === 'samsungNotes') renderSamsungNotes();
             statusEl.textContent = 'Synced';
         } catch (e) {
             console.warn('Cloud sync download failed:', e);
@@ -3797,7 +4255,7 @@
         statusEl.textContent = 'Saving...';
         try {
             const data = {};
-            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY];
+            const keys = [ENCRYPTED_KEY, SALT_KEY, VERIFY_KEY, SETTINGS_KEY, VERSIONS_KEY, PAGES_KEY, ACTIVE_KEY, NB_VERSIONS_KEY, SN_KEY];
             keys.forEach(key => {
                 const val = localStorage.getItem(key);
                 if (val !== null) data[key] = val;
@@ -3830,7 +4288,494 @@
         }
     }
 
+    // ── Shape Drawing ──
+    let shapeDrawingMode = null;
+    let activeShape = null;
+    let nextShapeId = 1;
+    const shapeDefaults = { fill: '#4a90d9', stroke: '#333333', strokeWidth: 2, fillNone: false };
+
+    function toggleShapePicker(e) {
+        const picker = document.getElementById('shapePicker');
+        if (picker.style.display === 'block') { picker.style.display = 'none'; return; }
+        document.getElementById('shapeFill').value = shapeDefaults.fill;
+        document.getElementById('shapeStroke').value = shapeDefaults.stroke;
+        document.getElementById('shapeStrokeWidth').value = shapeDefaults.strokeWidth;
+        document.getElementById('shapeFillNone').checked = shapeDefaults.fillNone;
+        const btn = e.currentTarget.getBoundingClientRect();
+        picker.style.display = 'block';
+        picker.style.left = btn.left + 'px';
+        picker.style.top = btn.bottom + 4 + 'px';
+    }
+
+    document.querySelectorAll('#shapePicker .shape-types button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            shapeDefaults.fill = document.getElementById('shapeFill').value;
+            shapeDefaults.stroke = document.getElementById('shapeStroke').value;
+            shapeDefaults.strokeWidth = parseInt(document.getElementById('shapeStrokeWidth').value);
+            shapeDefaults.fillNone = document.getElementById('shapeFillNone').checked;
+            document.getElementById('shapePicker').style.display = 'none';
+            shapeDrawingMode = btn.dataset.shape;
+            document.getElementById('canvas').classList.add('shape-drawing');
+            clearSelection();
+            deselectShape();
+        });
+    });
+
+    function cancelShapeDrawing() {
+        shapeDrawingMode = null;
+        document.getElementById('canvas').classList.remove('shape-drawing');
+    }
+
+    function selectShapeBox(box) {
+        clearSelection();
+        if (activeShape && activeShape !== box) activeShape.classList.remove('selected');
+        box.classList.add('selected');
+        activeShape = box;
+    }
+
+    function deselectShape() {
+        if (activeShape) { activeShape.classList.remove('selected'); activeShape = null; }
+    }
+
+    function updateShapeSVG(box) {
+        const svg = box.querySelector('svg');
+        const w = box.offsetWidth;
+        const h = box.offsetHeight;
+        const type = box.dataset.shapeType;
+        const fill = box.dataset.fill;
+        const stroke = box.dataset.stroke;
+        const sw = parseFloat(box.dataset.strokeWidth);
+        svg.setAttribute('width', w);
+        svg.setAttribute('height', h);
+        svg.innerHTML = '';
+        const half = sw / 2;
+        let el;
+        switch (type) {
+            case 'rect':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                el.setAttribute('x', half); el.setAttribute('y', half);
+                el.setAttribute('width', Math.max(0, w - sw)); el.setAttribute('height', Math.max(0, h - sw));
+                break;
+            case 'roundrect':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                el.setAttribute('x', half); el.setAttribute('y', half);
+                el.setAttribute('width', Math.max(0, w - sw)); el.setAttribute('height', Math.max(0, h - sw));
+                el.setAttribute('rx', Math.min(12, w / 4, h / 4)); el.setAttribute('ry', Math.min(12, w / 4, h / 4));
+                break;
+            case 'ellipse':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                el.setAttribute('cx', w / 2); el.setAttribute('cy', h / 2);
+                el.setAttribute('rx', Math.max(0, w / 2 - half)); el.setAttribute('ry', Math.max(0, h / 2 - half));
+                break;
+            case 'triangle':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                el.setAttribute('points', `${w/2},${half} ${w-half},${h-half} ${half},${h-half}`);
+                break;
+            case 'diamond':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                el.setAttribute('points', `${w/2},${half} ${w-half},${h/2} ${w/2},${h-half} ${half},${h/2}`);
+                break;
+            case 'pentagon': {
+                const pts = [];
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                    pts.push(`${w/2 + (w/2 - half) * Math.cos(angle)},${h/2 + (h/2 - half) * Math.sin(angle)}`);
+                }
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                el.setAttribute('points', pts.join(' '));
+                break;
+            }
+            case 'hexagon': {
+                const pts = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * 2 * Math.PI / 6) - Math.PI / 2;
+                    pts.push(`${w/2 + (w/2 - half) * Math.cos(angle)},${h/2 + (h/2 - half) * Math.sin(angle)}`);
+                }
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                el.setAttribute('points', pts.join(' '));
+                break;
+            }
+            case 'line':
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                el.setAttribute('x1', half); el.setAttribute('y1', h - half);
+                el.setAttribute('x2', w - half); el.setAttribute('y2', half);
+                break;
+            case 'arrow': {
+                const headLen = Math.min(14, w / 3);
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                el.setAttribute('x1', half); el.setAttribute('y1', h / 2);
+                el.setAttribute('x2', w - half); el.setAttribute('y2', h / 2);
+                // arrowhead
+                const head = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const ax = w - half, ay = h / 2;
+                head.setAttribute('points', `${ax},${ay} ${ax - headLen},${ay - headLen * 0.5} ${ax - headLen},${ay + headLen * 0.5}`);
+                head.setAttribute('fill', stroke);
+                head.setAttribute('stroke', 'none');
+                svg.appendChild(head);
+                break;
+            }
+        }
+        if (el) {
+            el.setAttribute('fill', fill);
+            el.setAttribute('stroke', stroke);
+            el.setAttribute('stroke-width', sw);
+            svg.appendChild(el);
+        }
+    }
+
+    function createShapeBox(x, y, w, h, shapeType, fill, stroke, strokeWidth, id) {
+        const box = document.createElement('div');
+        box.className = 'shape-box';
+        box.dataset.id = id || ('s' + nextShapeId++);
+        box.dataset.shapeType = shapeType;
+        box.dataset.fill = fill;
+        box.dataset.stroke = stroke;
+        box.dataset.strokeWidth = strokeWidth;
+        box.style.left = x + 'px';
+        box.style.top = y + 'px';
+        box.style.width = Math.max(w, 10) + 'px';
+        box.style.height = Math.max(h, 10) + 'px';
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        box.appendChild(svg);
+        updateShapeSVG(box);
+
+        // Resize handles
+        ['nw','ne','sw','se'].forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = 'sh-handle sh-' + pos;
+            box.appendChild(handle);
+            initShapeResize(handle, box, pos);
+        });
+
+        // Click to select
+        box.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('sh-handle')) return;
+            if (shapeDrawingMode) return;
+            e.stopPropagation();
+            selectShapeBox(box);
+            // Start drag
+            const startX = e.clientX, startY = e.clientY;
+            const origX = parseInt(box.style.left) || 0, origY = parseInt(box.style.top) || 0;
+            let moved = false;
+            function onMove(ev) {
+                moved = true;
+                box.style.left = Math.max(0, origX + ev.clientX - startX) + 'px';
+                box.style.top = Math.max(0, origY + ev.clientY - startY) + 'px';
+            }
+            function onUp() {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                if (moved) scheduleSave();
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // Right-click context menu
+        box.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectShapeBox(box);
+            const menu = document.getElementById('shapeCtxMenu');
+            menu.style.display = 'block';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+            const mr = menu.getBoundingClientRect();
+            if (mr.right > window.innerWidth) menu.style.left = (e.clientX - mr.width) + 'px';
+            if (mr.bottom > window.innerHeight) menu.style.top = (e.clientY - mr.height) + 'px';
+        });
+
+        document.getElementById('canvas').appendChild(box);
+        return box;
+    }
+
+    function initShapeResize(handle, box, pos) {
+        handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const startX = e.clientX, startY = e.clientY;
+            const origX = parseInt(box.style.left) || 0, origY = parseInt(box.style.top) || 0;
+            const origW = box.offsetWidth, origH = box.offsetHeight;
+            function onMove(ev) {
+                const dx = ev.clientX - startX, dy = ev.clientY - startY;
+                let nx = origX, ny = origY, nw = origW, nh = origH;
+                if (pos.includes('e')) nw = Math.max(10, origW + dx);
+                if (pos.includes('w')) { nw = Math.max(10, origW - dx); nx = origX + origW - nw; }
+                if (pos.includes('s')) nh = Math.max(10, origH + dy);
+                if (pos.includes('n')) { nh = Math.max(10, origH - dy); ny = origY + origH - nh; }
+                box.style.left = nx + 'px'; box.style.top = ny + 'px';
+                box.style.width = nw + 'px'; box.style.height = nh + 'px';
+                updateShapeSVG(box);
+            }
+            function onUp() {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                scheduleSave();
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
+
+    // Shape context menu actions
+    document.getElementById('sctxDelete').addEventListener('click', () => {
+        document.getElementById('shapeCtxMenu').style.display = 'none';
+        if (activeShape) { activeShape.remove(); activeShape = null; scheduleSave(); }
+    });
+    document.getElementById('sctxDuplicate').addEventListener('click', () => {
+        document.getElementById('shapeCtxMenu').style.display = 'none';
+        if (!activeShape) return;
+        const s = activeShape;
+        const nb = createShapeBox(
+            (parseInt(s.style.left) || 0) + 20, (parseInt(s.style.top) || 0) + 20,
+            s.offsetWidth, s.offsetHeight, s.dataset.shapeType,
+            s.dataset.fill, s.dataset.stroke, parseFloat(s.dataset.strokeWidth)
+        );
+        selectShapeBox(nb);
+        scheduleSave();
+    });
+    document.getElementById('sctxFill').addEventListener('click', () => {
+        document.getElementById('shapeCtxMenu').style.display = 'none';
+        if (!activeShape) return;
+        const picker = document.getElementById('shapeCtxFillPicker');
+        picker.value = activeShape.dataset.fill === 'none' ? '#ffffff' : activeShape.dataset.fill;
+        picker.click();
+        picker.onchange = () => {
+            if (!activeShape) return;
+            activeShape.dataset.fill = picker.value;
+            updateShapeSVG(activeShape);
+            scheduleSave();
+        };
+    });
+    document.getElementById('sctxStroke').addEventListener('click', () => {
+        document.getElementById('shapeCtxMenu').style.display = 'none';
+        if (!activeShape) return;
+        const picker = document.getElementById('shapeCtxStrokePicker');
+        picker.value = activeShape.dataset.stroke;
+        picker.click();
+        picker.onchange = () => {
+            if (!activeShape) return;
+            activeShape.dataset.stroke = picker.value;
+            updateShapeSVG(activeShape);
+            scheduleSave();
+        };
+    });
+    document.getElementById('sctxWidth').addEventListener('click', () => {
+        document.getElementById('shapeCtxMenu').style.display = 'none';
+        if (!activeShape) return;
+        const val = prompt('Outline width (1-10):', activeShape.dataset.strokeWidth);
+        if (val === null) return;
+        const n = Math.max(1, Math.min(10, parseInt(val) || 2));
+        activeShape.dataset.strokeWidth = n;
+        updateShapeSVG(activeShape);
+        scheduleSave();
+    });
+
+    // ── Table Menu Handlers ──
+    document.getElementById('tmNewTable').addEventListener('click', () => {
+        // Show grid picker for size selection
+        document.querySelector('#tablePicker .table-menu').style.display = 'none';
+        document.getElementById('tableGridWrap').style.display = '';
+    });
+    document.getElementById('tmGridBack').addEventListener('click', () => {
+        document.getElementById('tableGridWrap').style.display = 'none';
+        document.querySelector('#tablePicker .table-menu').style.display = '';
+    });
+    document.getElementById('tmDeleteTable').addEventListener('click', () => {
+        document.getElementById('tablePicker').style.display = 'none';
+        const sel = window.getSelection();
+        if (!sel.rangeCount || !sel.anchorNode) return;
+        const table = sel.anchorNode.parentElement.closest('table');
+        if (table) { table.remove(); scheduleSave(); }
+    });
+    document.getElementById('tmAddRow').addEventListener('click', () => {
+        document.getElementById('tablePicker').style.display = 'none';
+        const sel = window.getSelection();
+        if (!sel.rangeCount || !sel.anchorNode) return;
+        const td = sel.anchorNode.parentElement.closest('td');
+        const table = td && td.closest('table');
+        if (!table) return;
+        const numCols = table.rows[0] ? table.rows[0].cells.length : 1;
+        const rowIdx = td.parentElement.rowIndex;
+        const row = table.insertRow(rowIdx + 1);
+        for (let i = 0; i < numCols; i++) { const c = row.insertCell(); c.innerHTML = '<br>'; }
+        if (table.parentElement) autoFitBox(table);
+        scheduleSave();
+    });
+    document.getElementById('tmAddColumn').addEventListener('click', () => {
+        document.getElementById('tablePicker').style.display = 'none';
+        const sel = window.getSelection();
+        if (!sel.rangeCount || !sel.anchorNode) return;
+        const td = sel.anchorNode.parentElement.closest('td');
+        const table = td && td.closest('table');
+        if (!table) return;
+        const colIdx = td.cellIndex;
+        for (const row of table.rows) {
+            const c = row.insertCell(colIdx + 1);
+            c.innerHTML = '<br>';
+        }
+        if (table.parentElement) autoFitBox(table);
+        scheduleSave();
+    });
+
+    // ── Tab Switching ──
+    let activeTab = 'notebook';
+
+    function switchTab(tab) {
+        activeTab = tab;
+        document.getElementById('tabNotebook').classList.toggle('active', tab === 'notebook');
+        document.getElementById('tabSamsungNotes').classList.toggle('active', tab === 'samsungNotes');
+        document.getElementById('notebookView').classList.toggle('hidden', tab !== 'notebook');
+        const snView = document.getElementById('samsungNotesView');
+        snView.classList.toggle('active', tab === 'samsungNotes');
+        if (tab === 'samsungNotes') {
+            renderSamsungNotes();
+        }
+    }
+
+    // ── Samsung Notes ──
+    const SN_KEY = 'samsung_notes';
+    let samsungNotes = [];
+    let voiceRecognition = null;
+
+    function loadSamsungNotes() {
+        try {
+            samsungNotes = JSON.parse(localStorage.getItem(SN_KEY)) || [];
+        } catch { samsungNotes = []; }
+    }
+
+    function saveSamsungNotes() {
+        localStorage.setItem(SN_KEY, JSON.stringify(samsungNotes));
+        syncToCloud();
+    }
+
+    function renderSamsungNotes() {
+        const list = document.getElementById('snList');
+        if (samsungNotes.length === 0) {
+            list.innerHTML = '<div class="sn-empty">No notes yet.<br>Tap the microphone to speak a note.</div>';
+            return;
+        }
+        // Show newest first
+        const sorted = [...samsungNotes].sort((a, b) => b.createdAt - a.createdAt);
+        list.innerHTML = sorted.map(note => `
+            <div class="sn-note">
+                <span class="sn-icon">&#127908;</span>
+                <div class="sn-body">
+                    <div class="sn-text">${escapeHtmlSN(note.text)}</div>
+                    <div class="sn-time">${formatTimeSN(note.createdAt)}</div>
+                </div>
+                <button class="sn-delete" onclick="deleteSamsungNote('${note.id}')" title="Delete">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function escapeHtmlSN(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatTimeSN(ts) {
+        const d = new Date(ts);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function toggleVoiceNote() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Voice input is not supported in this browser. Use Chrome or Samsung Internet.');
+            return;
+        }
+
+        const btn = document.getElementById('btnVoiceNote');
+        const status = document.getElementById('voiceStatus');
+
+        if (voiceRecognition) {
+            voiceRecognition.abort();
+            voiceRecognition = null;
+            btn.classList.remove('listening');
+            status.textContent = '';
+            return;
+        }
+
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = 'en-US';
+        voiceRecognition.interimResults = false;
+        voiceRecognition.continuous = false;
+
+        btn.classList.add('listening');
+        status.textContent = 'Listening...';
+
+        voiceRecognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            btn.classList.remove('listening');
+            status.textContent = '';
+            voiceRecognition = null;
+
+            // Add the note
+            samsungNotes.push({
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
+                text: transcript,
+                createdAt: Date.now()
+            });
+            saveSamsungNotes();
+            renderSamsungNotes();
+        };
+
+        voiceRecognition.onerror = function(event) {
+            btn.classList.remove('listening');
+            voiceRecognition = null;
+            if (event.error === 'not-allowed') {
+                status.textContent = 'Mic access denied';
+                alert('Microphone access denied. Please allow microphone permission in your browser settings.');
+            } else if (event.error !== 'aborted') {
+                status.textContent = 'Error: ' + event.error;
+            } else {
+                status.textContent = '';
+            }
+        };
+
+        voiceRecognition.onend = function() {
+            btn.classList.remove('listening');
+            voiceRecognition = null;
+            status.textContent = '';
+        };
+
+        voiceRecognition.start();
+    }
+
+    function openAddNoteModal() {
+        document.getElementById('addNoteText').value = '';
+        document.getElementById('addNoteOverlay').classList.add('show');
+        setTimeout(() => document.getElementById('addNoteText').focus(), 50);
+    }
+
+    function closeAddNoteModal() {
+        document.getElementById('addNoteOverlay').classList.remove('show');
+    }
+
+    function saveAddedNote() {
+        const text = document.getElementById('addNoteText').value.trim();
+        if (!text) { document.getElementById('addNoteText').focus(); return; }
+        samsungNotes.push({
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
+            text: text,
+            createdAt: Date.now()
+        });
+        saveSamsungNotes();
+        renderSamsungNotes();
+        closeAddNoteModal();
+    }
+
+    function deleteSamsungNote(id) {
+        samsungNotes = samsungNotes.filter(n => n.id !== id);
+        saveSamsungNotes();
+        renderSamsungNotes();
+    }
+
     // ── Init ──
+    loadSamsungNotes();
     buildTableGrid();
     initFirebase();
 </script>
