@@ -1893,7 +1893,20 @@
 
     function applyFontSize() {
         const sel = document.getElementById('fontSize');
-        if (sel.value) {
+        if (!sel.value || !activeBox) { sel.value = ''; return; }
+        const content = activeBox.querySelector('.note-content');
+        const selection = window.getSelection();
+        const hasSelectionInBox = selection.rangeCount > 0 && !selection.isCollapsed && content.contains(selection.anchorNode);
+        if (!hasSelectionInBox) {
+            // Map execCommand fontSize values (1-7) to px
+            const sizeMap = { '1': '10px', '2': '13px', '3': '16px', '4': '18px', '5': '24px', '6': '32px', '7': '48px' };
+            const px = sizeMap[sel.value] || '16px';
+            content.style.fontSize = px;
+            // Also clear any inline font-size on child elements so it's uniform
+            content.querySelectorAll('[style]').forEach(el => { el.style.fontSize = ''; });
+            content.querySelectorAll('font[size]').forEach(el => { el.removeAttribute('size'); });
+            scheduleSave();
+        } else {
             document.execCommand('fontSize', false, sel.value);
             scheduleSave();
         }
