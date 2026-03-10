@@ -1944,7 +1944,23 @@
 
     function insertTable(rows, cols) {
         document.getElementById('tablePicker').style.display = 'none';
-        if (!activeBox) return;
+        if (!activeBox) {
+            const canvas = document.getElementById('canvas');
+            let x, y;
+            if (canvasCursorActive) {
+                x = canvasCursorX;
+                y = canvasCursorY;
+                hideCanvasCursor();
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                x = rect.width / 2 - 100 + canvas.scrollLeft;
+                y = rect.height / 2 - 50 + canvas.scrollTop;
+            }
+            const box = createNoteBox(x, y, 200, null, '', null);
+            editBox(box);
+            const hint = document.getElementById('canvas-hint');
+            if (hint) hint.style.display = 'none';
+        }
         const content = activeBox.querySelector('.note-content');
         let html = '<table>';
         for (let r = 0; r < rows; r++) {
