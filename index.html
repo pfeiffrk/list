@@ -4982,12 +4982,14 @@
     let googleTasksCache = [];
     let tokenClient = null;
 
+    const GOOGLE_CLIENT_ID = '890920806003-3qcnb73toon76pdihvqsf61g40jpbfhs.apps.googleusercontent.com';
+
     function getGoogleClientId() {
-        return localStorage.getItem(GT_CLIENT_ID_KEY) || '';
+        return GOOGLE_CLIENT_ID;
     }
 
     function setGoogleClientId(clientId) {
-        localStorage.setItem(GT_CLIENT_ID_KEY, clientId.trim());
+        // Client ID is hardcoded, no-op
     }
 
     function initGoogleTasksAuth() {
