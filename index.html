@@ -646,6 +646,16 @@
             z-index: 1;
             width: auto;
         }
+        .note-box .resize-edge {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: ew-resize;
+            z-index: 20;
+        }
+        .note-box .resize-edge.left { left: -3px; }
+        .note-box .resize-edge.right { right: -3px; }
         .note-box.selected {
             background: transparent;
             border-color: rgba(160,160,160,0.5);
@@ -662,7 +672,7 @@
             flex-shrink: 0;
         }
         .note-box.selected .grab-handle {
-            background: rgba(160,160,160,0.25);
+            background: rgba(160,160,160,0.5);
         }
         .note-box .grab-handle .dots {
             font-size: 9px;
@@ -690,10 +700,12 @@
             font-size: 14px;
             line-height: 1.5;
             overflow: visible;
-            resize: both;
-            min-width: 140px;
+            resize: none;
+            min-width: 0;
             min-height: 40px;
             background: transparent;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         .note-box.selected .note-content,
         .note-box.multi-selected .note-content {
@@ -922,7 +934,7 @@
             z-index: 10;
         }
         .note-box.multi-selected .grab-handle {
-            background: rgba(160,160,160,0.25);
+            background: rgba(160,160,160,0.5);
         }
         .note-box.multi-selected .grab-handle .dots {
             color: rgba(100,100,100,0.6);
@@ -2586,7 +2598,10 @@
         box.dataset.id = id || nextBoxId++;
         box.style.left = x + 'px';
         box.style.top = y + 'px';
-        if (w) box.style.minWidth = w + 'px';
+        if (w) {
+            box.style.width = w + 'px';
+            box.style.minWidth = w + 'px';
+        }
 
         // Grab handle
         const handle = document.createElement('div');
@@ -2672,6 +2687,45 @@
 
         box.appendChild(handle);
         box.appendChild(content);
+
+        // Left/right resize edges
+        const leftEdge = document.createElement('div');
+        leftEdge.className = 'resize-edge left';
+        const rightEdge = document.createElement('div');
+        rightEdge.className = 'resize-edge right';
+        box.appendChild(leftEdge);
+        box.appendChild(rightEdge);
+
+        function initEdgeResize(edgeEl, side) {
+            edgeEl.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const startX = e.clientX;
+                const origW = box.offsetWidth;
+                const origLeft = parseInt(box.style.left) || 0;
+                function onMove(ev) {
+                    const dx = ev.clientX - startX;
+                    if (side === 'right') {
+                        box.style.width = Math.max(80, origW + dx) + 'px';
+                        box.style.minWidth = Math.max(80, origW + dx) + 'px';
+                    } else {
+                        const newW = Math.max(80, origW - dx);
+                        box.style.width = newW + 'px';
+                        box.style.minWidth = newW + 'px';
+                        box.style.left = (origLeft + origW - newW) + 'px';
+                    }
+                }
+                function onUp() {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    scheduleSave();
+                }
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        }
+        initEdgeResize(leftEdge, 'left');
+        initEdgeResize(rightEdge, 'right');
 
         // Select on click (shift = toggle in/out of selection)
         box.addEventListener('mousedown', (e) => {
