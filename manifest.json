@@ -1,0 +1,17 @@
+{
+    "name": "Quick Notes",
+    "short_name": "Quick Notes",
+    "description": "Fast voice and text note capture",
+    "start_url": "quick-note.html",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#1a1a2e",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231a1a2e'/%3E%3Ccircle cx='96' cy='80' r='36' fill='none' stroke='%23e94560' stroke-width='6'/%3E%3Crect x='84' y='52' width='24' height='40' rx='12' fill='%23e94560'/%3E%3Cpath d='M72 80v8a24 24 0 0 0 48 0v-8' fill='none' stroke='%23e94560' stroke-width='5'/%3E%3Cline x1='96' y1='112' x2='96' y2='128' stroke='%23e94560' stroke-width='5'/%3E%3Cline x1='80' y1='128' x2='112' y2='128' stroke='%23e94560' stroke-width='5'/%3E%3Ctext x='96' y='165' text-anchor='middle' fill='%23e0e0e0' font-family='sans-serif' font-size='22' font-weight='600'%3EQuick Notes%3C/text%3E%3C/svg%3E",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        }
+    ]
+}

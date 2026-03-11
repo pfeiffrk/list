@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Quick Notes</title>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Sign-in screen */
+        #signIn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 24px;
+        }
+        #signIn h1 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #fff;
+        }
+        #signIn input {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #16213e;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+        #signIn input:focus { border-color: #e94560; }
+        #signIn button {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #e94560;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #signIn button:active { opacity: 0.8; }
+        #signIn .error {
+            color: #e94560;
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* Main app */
+        #app {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+        }
+        .header h1 {
+            font-size: 18px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .header .user-info {
+            font-size: 11px;
+            color: #888;
+        }
+        .header button {
+            background: none;
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Mic area */
+        .mic-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px 16px;
+            flex-shrink: 0;
+        }
+        .mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #e94560;
+            background: #16213e;
+            color: #e94560;
+            font-size: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mic-btn:active { transform: scale(0.95); }
+        .mic-btn.listening {
+            background: #e94560;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+        .mic-btn.disabled {
+            border-color: #444;
+            color: #444;
+            cursor: default;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+        }
+        .mic-status {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #888;
+            height: 20px;
+        }
+        .mic-status.success { color: #4ecca3; }
+        .mic-status.error { color: #e94560; }
+
+        /* Text input area */
+        .input-area {
+            display: flex;
+            padding: 0 16px 12px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #16213e;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+        }
+        .input-area input:focus { border-color: #e94560; }
+        .input-area button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #e94560;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .input-area button:active { opacity: 0.8; }
+
+        /* Notes list */
+        .notes-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+        }
+        .notes-list h2 {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .note-item {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border-left: 3px solid #e94560;
+        }
+        .note-item .note-text {
+            font-size: 14px;
+            color: #ddd;
+            line-height: 1.4;
+        }
+        .note-item .note-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .no-notes {
+            text-align: center;
+            color: #555;
+            font-size: 14px;
+            padding: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sign-in screen -->
+<div id="signIn">
+    <h1>Quick Notes</h1>
+    <input type="email" id="email" placeholder="Email" autocomplete="email">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="signIn()">Sign In</button>
+    <div id="signInError" class="error"></div>
+</div>
+
+<!-- Main app -->
+<div id="app">
+    <div class="header">
+        <h1>Quick Notes</h1>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="user-info" id="userEmail"></span>
+            <button onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="mic-area">
+        <button class="mic-btn" id="micBtn" onclick="toggleVoice()">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+        </button>
+        <div class="mic-status" id="micStatus">Tap mic to record</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="noteInput" placeholder="Or type a note..." enterkeyhint="send">
+        <button onclick="sendTypedNote()">Send</button>
+    </div>
+
+    <div class="notes-list" id="notesList">
+        <h2>Recent Notes</h2>
+        <div id="notesContainer"></div>
+    </div>
+</div>
+
+<script>
+    // Firebase config (same as main app)
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDpOMSGLIZXm1o0GE13NAe6fctMWC-khRk",
+        authDomain: "my-notes-63ce0.firebaseapp.com",
+        databaseURL: "https://my-notes-63ce0-default-rtdb.firebaseio.com",
+        projectId: "my-notes-63ce0",
+        storageBucket: "my-notes-63ce0.firebasestorage.app",
+        messagingSenderId: "890920806003",
+        appId: "1:890920806003:web:d9bcb77be35a3a9f09ec06"
+    };
+
+    const SN_KEY = 'samsung_notes';
+    let firebaseUser = null;
+    let voiceRecognition = null;
+    let recentNotes = [];
+
+    // Init Firebase
+    firebase.initializeApp(FIREBASE_CONFIG);
+
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            firebaseUser = user;
+            document.getElementById('signIn').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            document.getElementById('userEmail').textContent = user.email;
+            loadRecentNotes();
+            tryAutoMic();
+        } else {
+            firebaseUser = null;
+            document.getElementById('signIn').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    });
+
+    function signIn() {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const errEl = document.getElementById('signInError');
+        errEl.textContent = '';
+        if (!email || !pass) { errEl.textContent = 'Enter email and password'; return; }
+        firebase.auth().signInWithEmailAndPassword(email, pass)
+            .catch(err => { errEl.textContent = err.message; });
+    }
+
+    function signOut() {
+        firebase.auth().signOut();
+    }
+
+    // Generate note ID (same format as main app)
+    function genId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Atomic append to samsung_notes using transaction
+    function addNote(text) {
+        if (!firebaseUser || !text.trim()) return Promise.resolve();
+        const ref = firebase.database().ref('users/' + firebaseUser.uid + '/' + SN_KEY);
+        const note = { id: genId(), text: text.trim(), createdAt: Date.now() };
+
+        return ref.transaction(currentVal => {
+            let notes = [];
+            if (currentVal) {
+                try { notes = JSON.parse(currentVal); } catch (e) { notes = []; }
+            }
+            if (!Array.isArray(notes)) notes = [];
+            notes.push(note);
+            return JSON.stringify(notes);
+        }).then(() => {
+            // Update _lastModified so main app knows to re-sync
+            return firebase.database().ref('users/' + firebaseUser.uid + '/_lastModified').set(Date.now());
+        }).then(() => {
+            recentNotes.unshift(note);
+            renderNotes();
+            return note;
+        });
+    }
+
+    // Load recent notes from Firebase
+    function loadRecentNotes() {
+        if (!firebaseUser) return;
+        firebase.database().ref('users/' + firebaseUser.uid + '/' + SN_KEY).once('value')
+            .then(snap => {
+                const val = snap.val();
+                if (val) {
+                    try {
+                        const notes = JSON.parse(val);
+                        if (Array.isArray(notes)) {
+                            recentNotes = notes.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20);
+                        }
+                    } catch (e) { recentNotes = []; }
+                }
+                renderNotes();
+            });
+    }
+
+    function renderNotes() {
+        const container = document.getElementById('notesContainer');
+        if (recentNotes.length === 0) {
+            container.innerHTML = '<div class="no-notes">No notes yet. Tap the mic or type below.</div>';
+            return;
+        }
+        container.innerHTML = recentNotes.map(n =>
+            '<div class="note-item">' +
+                '<div class="note-text">' + escapeHtml(n.text) + '</div>' +
+                '<div class="note-time">' + formatTime(n.createdAt) + '</div>' +
+            '</div>'
+        ).join('');
+    }
+
+    function escapeHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function formatTime(ts) {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    // Voice recording
+    function toggleVoice() {
+        const btn = document.getElementById('micBtn');
+        const status = document.getElementById('micStatus');
+
+        if (voiceRecognition) {
+            voiceRecognition.abort();
+            voiceRecognition = null;
+            btn.classList.remove('listening');
+            status.textContent = 'Tap mic to record';
+            status.className = 'mic-status';
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            status.textContent = 'Voice not supported in this browser';
+            status.className = 'mic-status error';
+            return;
+        }
+
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = 'en-US';
+        voiceRecognition.interimResults = false;
+        voiceRecognition.continuous = false;
+
+        btn.classList.add('listening');
+        status.textContent = 'Listening...';
+        status.className = 'mic-status';
+
+        voiceRecognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            btn.classList.remove('listening');
+            voiceRecognition = null;
+            status.textContent = 'Saving...';
+            status.className = 'mic-status';
+
+            addNote(transcript).then(() => {
+                status.textContent = 'Saved!';
+                status.className = 'mic-status success';
+                setTimeout(() => {
+                    status.textContent = 'Tap mic to record';
+                    status.className = 'mic-status';
+                }, 2000);
+            }).catch(err => {
+                status.textContent = 'Save failed: ' + err.message;
+                status.className = 'mic-status error';
+            });
+        };
+
+        voiceRecognition.onerror = function(event) {
+            btn.classList.remove('listening');
+            voiceRecognition = null;
+            if (event.error === 'not-allowed') {
+                status.textContent = 'Microphone access denied';
+            } else if (event.error !== 'aborted') {
+                status.textContent = 'Error: ' + event.error;
+            } else {
+                status.textContent = 'Tap mic to record';
+            }
+            status.className = event.error === 'aborted' ? 'mic-status' : 'mic-status error';
+        };
+
+        voiceRecognition.onend = function() {
+            if (voiceRecognition) {
+                btn.classList.remove('listening');
+                voiceRecognition = null;
+            }
+        };
+
+        voiceRecognition.start();
+    }
+
+    // Auto-start mic when PWA opens (if already authenticated)
+    function tryAutoMic() {
+        // Only auto-start in standalone/PWA mode
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            setTimeout(() => toggleVoice(), 500);
+        }
+    }
+
+    // Keyboard input
+    function sendTypedNote() {
+        const input = document.getElementById('noteInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        const status = document.getElementById('micStatus');
+        status.textContent = 'Saving...';
+        status.className = 'mic-status';
+        addNote(text).then(() => {
+            status.textContent = 'Saved!';
+            status.className = 'mic-status success';
+            setTimeout(() => {
+                status.textContent = 'Tap mic to record';
+                status.className = 'mic-status';
+            }, 2000);
+        }).catch(err => {
+            status.textContent = 'Save failed: ' + err.message;
+            status.className = 'mic-status error';
+        });
+    }
+
+    // Enter key sends note
+    document.getElementById('noteInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); sendTypedNote(); }
+    });
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+</script>
+</body>
+</html>
