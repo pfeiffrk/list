@@ -1113,6 +1113,126 @@
             background: #f5f6fa;
         }
         #samsungNotesView.active { display: flex; }
+
+        /* ── Phone Notes View ── */
+        #phoneNotesView {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        #phoneNotesView.active { display: flex; }
+        .pn-mic-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px 16px;
+            flex-shrink: 0;
+        }
+        .pn-mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #e94560;
+            background: #16213e;
+            color: #e94560;
+            font-size: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .pn-mic-btn:active { transform: scale(0.95); }
+        .pn-mic-btn.listening {
+            background: #e94560;
+            color: #fff;
+            animation: pn-pulse 1.5s infinite;
+        }
+        @keyframes pn-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(233, 69, 96, 0); }
+        }
+        .pn-mic-status {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #888;
+            height: 20px;
+        }
+        .pn-mic-status.success { color: #4ecca3; }
+        .pn-mic-status.error { color: #e94560; }
+        .pn-input-area {
+            display: flex;
+            padding: 0 16px 12px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .pn-input-area input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #16213e;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+        }
+        .pn-input-area input:focus { border-color: #e94560; }
+        .pn-input-area button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #e94560;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .pn-input-area button:active { opacity: 0.8; }
+        .pn-notes-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+        }
+        .pn-notes-list h2 {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .pn-note-item {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border-left: 3px solid #e94560;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .pn-note-item .pn-note-body { flex: 1; min-width: 0; }
+        .pn-note-item .pn-note-text { font-size: 14px; color: #ddd; line-height: 1.4; }
+        .pn-note-item .pn-note-time { font-size: 11px; color: #666; margin-top: 4px; }
+        .pn-note-item .pn-delete {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .pn-note-item .pn-delete:hover { color: #e94560; }
+        .pn-no-notes {
+            text-align: center;
+            color: #555;
+            font-size: 14px;
+            padding: 24px;
+        }
         .sn-toolbar {
             display: flex;
             align-items: center;
@@ -1407,6 +1527,44 @@
         .gt-connect-btn:hover { background: #4a90d9; color: #fff; }
         .gt-connect-btn.connected { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
 
+        /* ── Google Tasks Toggle ── */
+        .gt-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            user-select: none;
+        }
+        .gt-toggle input { display: none; }
+        .gt-toggle-slider {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .gt-toggle-slider::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .gt-toggle input:checked + .gt-toggle-slider {
+            background: #4caf50;
+        }
+        .gt-toggle input:checked + .gt-toggle-slider::after {
+            transform: translateX(16px);
+        }
+        .gt-toggle-label { font-weight: 600; }
+
         @media (max-width: 768px) {
             .tab-btn { padding: 10px 16px; font-size: 13px; }
             .sn-setup-card { margin: 16px; padding: 20px; }
@@ -1419,7 +1577,8 @@
 <!-- Tab Bar -->
 <div id="tabBar">
     <button class="tab-btn active" onclick="switchTab('notebook')" id="tabNotebook">Notebook</button>
-    <button class="tab-btn" onclick="switchTab('samsungNotes')" id="tabSamsungNotes">Samsung Notes</button>
+    <button class="tab-btn" onclick="switchTab('phoneNotes')" id="tabPhoneNotes">Phone Notes</button>
+    <button class="tab-btn" onclick="switchTab('samsungNotes')" id="tabSamsungNotes">Google Tasks</button>
 </div>
 
 <!-- ═══ NOTEBOOK TAB CONTENT ═══ -->
@@ -1696,12 +1855,40 @@
 
 </div><!-- end #notebookView -->
 
+<!-- ═══ PHONE NOTES TAB CONTENT ═══ -->
+<div id="phoneNotesView">
+    <div class="pn-mic-area">
+        <button class="pn-mic-btn" id="pnMicBtn" onclick="togglePhoneVoice()">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+        </button>
+        <div class="pn-mic-status" id="pnMicStatus">Tap mic to record</div>
+    </div>
+    <div class="pn-input-area">
+        <input type="text" id="pnNoteInput" placeholder="Or type a note..." enterkeyhint="send">
+        <button onclick="sendPhoneNote()">Send</button>
+    </div>
+    <div class="pn-notes-list">
+        <h2>Recent Notes</h2>
+        <div id="pnNotesContainer"></div>
+    </div>
+</div>
+
 <!-- ═══ SAMSUNG NOTES TAB CONTENT ═══ -->
 <div id="samsungNotesView">
     <div class="sn-toolbar">
-        <span class="sn-title">Samsung Notes</span>
+        <span class="sn-title">Google Tasks</span>
         <span id="voiceStatus"></span>
-        <button id="btnGoogleTasks" class="gt-connect-btn" onclick="toggleGoogleTasks()" title="Connect Google Tasks">Connect Tasks</button>
+        <label class="gt-toggle" title="Enable or disable Google Tasks">
+            <input type="checkbox" id="gtEnabledToggle" onchange="toggleGoogleTasksEnabled(this.checked)">
+            <span class="gt-toggle-slider"></span>
+            <span class="gt-toggle-label" id="gtToggleLabel">Disabled</span>
+        </label>
+        <button id="btnGoogleTasks" class="gt-connect-btn" onclick="toggleGoogleTasks()" title="Connect Google Tasks" style="display:none;">Connect Tasks</button>
         <button id="btnRefreshTasks" class="sn-toolbar button" onclick="fetchGoogleTasks()" title="Refresh tasks" style="background:#e0e0e0;border:1px solid #bbb;border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;display:none;">Refresh</button>
         <button id="btnVoiceNote" onclick="toggleVoiceNote()" title="Tap to speak a note">&#127908;</button>
     </div>
@@ -4479,6 +4666,9 @@
             // Reload Samsung Notes from updated localStorage
             loadSamsungNotes();
             if (activeTab === 'samsungNotes') renderSamsungNotes();
+            if (activeTab === 'phoneNotes') renderPhoneNotes();
+            // Re-apply Google Tasks toggle from synced settings
+            applyGoogleTasksToggle(isGoogleTasksEnabled());
             statusEl.textContent = 'Synced';
         } catch (e) {
             console.warn('Cloud sync download failed:', e);
@@ -4868,10 +5058,11 @@
     function switchTab(tab) {
         activeTab = tab;
         document.getElementById('tabNotebook').classList.toggle('active', tab === 'notebook');
+        document.getElementById('tabPhoneNotes').classList.toggle('active', tab === 'phoneNotes');
         document.getElementById('tabSamsungNotes').classList.toggle('active', tab === 'samsungNotes');
         document.getElementById('notebookView').classList.toggle('hidden', tab !== 'notebook');
-        const snView = document.getElementById('samsungNotesView');
-        snView.classList.toggle('active', tab === 'samsungNotes');
+        document.getElementById('phoneNotesView').classList.toggle('active', tab === 'phoneNotes');
+        document.getElementById('samsungNotesView').classList.toggle('active', tab === 'samsungNotes');
         if (tab === 'samsungNotes') {
             renderSamsungNotes();
             if (googleAccessToken && googleTokenExpiry > Date.now()) {
@@ -4879,6 +5070,9 @@
             }
         } else {
             stopGoogleTasksRefresh();
+        }
+        if (tab === 'phoneNotes') {
+            renderPhoneNotes();
         }
     }
 
@@ -4926,23 +5120,8 @@
             html += '<div class="sn-empty">No tasks found. Try saying "Add a task" to Gemini.</div>';
         }
 
-        // Section 2: Voice notes
-        if (samsungNotes.length > 0) {
-            if (html) html += '<div class="gt-section-header" style="color:#666;border-color:#ccc;"><span>Voice Notes</span></div>';
-            const sorted = [...samsungNotes].sort((a, b) => b.createdAt - a.createdAt);
-            html += sorted.map(note =>
-                '<div class="sn-note"><div class="sn-header">' +
-                    '<div class="sn-body">' +
-                        '<div class="sn-preview">' + escapeHtmlSN(note.text) + '</div>' +
-                        '<div class="sn-time">' + formatTimeSN(note.createdAt) + '</div>' +
-                    '</div>' +
-                    '<button class="sn-delete" onclick="deleteSamsungNote(\'' + note.id + '\')" title="Delete">&times;</button>' +
-                '</div></div>'
-            ).join('');
-        }
-
         if (!html) {
-            html = '<div class="sn-empty">No notes yet.<br>Connect Google Tasks or tap the mic to speak a note.</div>';
+            html = '<div class="sn-empty">No tasks yet.<br>Connect Google Tasks to see your tasks here.</div>';
         }
 
         list.innerHTML = html;
@@ -4997,6 +5176,7 @@
             });
             saveSamsungNotes();
             renderSamsungNotes();
+            renderPhoneNotes();
         };
 
         voiceRecognition.onerror = function(event) {
@@ -5231,12 +5411,164 @@
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    // ── Google Tasks Enable/Disable Toggle ──
+    function isGoogleTasksEnabled() {
+        const s = getSettings();
+        return s.googleTasksEnabled === true;
+    }
+
+    function toggleGoogleTasksEnabled(enabled) {
+        const s = getSettings();
+        s.googleTasksEnabled = enabled;
+        putSettings(s);
+        applyGoogleTasksToggle(enabled);
+    }
+
+    function applyGoogleTasksToggle(enabled) {
+        const toggle = document.getElementById('gtEnabledToggle');
+        const label = document.getElementById('gtToggleLabel');
+        const connectBtn = document.getElementById('btnGoogleTasks');
+        const refreshBtn = document.getElementById('btnRefreshTasks');
+        toggle.checked = enabled;
+        label.textContent = enabled ? 'Enabled' : 'Disabled';
+        if (enabled) {
+            connectBtn.style.display = '';
+        } else {
+            connectBtn.style.display = 'none';
+            refreshBtn.style.display = 'none';
+            disconnectGoogleTasks();
+        }
+    }
+
+    // ── Phone Notes ──
+    let phoneVoiceRecognition = null;
+
+    function renderPhoneNotes() {
+        const container = document.getElementById('pnNotesContainer');
+        if (samsungNotes.length === 0) {
+            container.innerHTML = '<div class="pn-no-notes">No notes yet. Tap the mic or type below.</div>';
+            return;
+        }
+        const sorted = [...samsungNotes].sort((a, b) => b.createdAt - a.createdAt);
+        container.innerHTML = sorted.map(n =>
+            '<div class="pn-note-item">' +
+                '<div class="pn-note-body">' +
+                    '<div class="pn-note-text">' + escapeHtmlSN(n.text) + '</div>' +
+                    '<div class="pn-note-time">' + formatTimeSN(n.createdAt) + '</div>' +
+                '</div>' +
+                '<button class="pn-delete" onclick="deletePhoneNote(\'' + n.id + '\')" title="Delete">&times;</button>' +
+            '</div>'
+        ).join('');
+    }
+
+    function deletePhoneNote(id) {
+        samsungNotes = samsungNotes.filter(n => n.id !== id);
+        saveSamsungNotes();
+        renderPhoneNotes();
+    }
+
+    function addPhoneNote(text) {
+        if (!text.trim()) return;
+        samsungNotes.push({
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
+            text: text.trim(),
+            createdAt: Date.now()
+        });
+        saveSamsungNotes();
+        renderPhoneNotes();
+    }
+
+    function sendPhoneNote() {
+        const input = document.getElementById('pnNoteInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addPhoneNote(text);
+        const status = document.getElementById('pnMicStatus');
+        status.textContent = 'Saved!';
+        status.className = 'pn-mic-status success';
+        setTimeout(() => {
+            status.textContent = 'Tap mic to record';
+            status.className = 'pn-mic-status';
+        }, 2000);
+    }
+
+    function togglePhoneVoice() {
+        const btn = document.getElementById('pnMicBtn');
+        const status = document.getElementById('pnMicStatus');
+
+        if (phoneVoiceRecognition) {
+            phoneVoiceRecognition.abort();
+            phoneVoiceRecognition = null;
+            btn.classList.remove('listening');
+            status.textContent = 'Tap mic to record';
+            status.className = 'pn-mic-status';
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            status.textContent = 'Voice not supported in this browser';
+            status.className = 'pn-mic-status error';
+            return;
+        }
+
+        phoneVoiceRecognition = new SpeechRecognition();
+        phoneVoiceRecognition.lang = 'en-US';
+        phoneVoiceRecognition.interimResults = false;
+        phoneVoiceRecognition.continuous = false;
+
+        btn.classList.add('listening');
+        status.textContent = 'Listening...';
+        status.className = 'pn-mic-status';
+
+        phoneVoiceRecognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            btn.classList.remove('listening');
+            phoneVoiceRecognition = null;
+            addPhoneNote(transcript);
+            status.textContent = 'Saved!';
+            status.className = 'pn-mic-status success';
+            setTimeout(() => {
+                status.textContent = 'Tap mic to record';
+                status.className = 'pn-mic-status';
+            }, 2000);
+        };
+
+        phoneVoiceRecognition.onerror = function(event) {
+            btn.classList.remove('listening');
+            phoneVoiceRecognition = null;
+            if (event.error === 'not-allowed') {
+                status.textContent = 'Microphone access denied';
+            } else if (event.error !== 'aborted') {
+                status.textContent = 'Error: ' + event.error;
+            } else {
+                status.textContent = 'Tap mic to record';
+            }
+            status.className = event.error === 'aborted' ? 'pn-mic-status' : 'pn-mic-status error';
+        };
+
+        phoneVoiceRecognition.onend = function() {
+            if (phoneVoiceRecognition) {
+                btn.classList.remove('listening');
+                phoneVoiceRecognition = null;
+            }
+        };
+
+        phoneVoiceRecognition.start();
+    }
+
+    document.getElementById('pnNoteInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); sendPhoneNote(); }
+    });
+
     // ── Init ──
     loadSamsungNotes();
     loadGoogleTasksCache();
     buildTableGrid();
+    applyGoogleTasksToggle(isGoogleTasksEnabled());
     initFirebase();
-    initGoogleTasksAuth();
+    if (isGoogleTasksEnabled()) initGoogleTasksAuth();
 </script>
 </body>
 </html>
