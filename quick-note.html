@@ -23,6 +23,44 @@
             overflow: hidden;
         }
 
+        /* Auto-mic overlay */
+        #autoMicOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #1a1a2e;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #autoMicOverlay.active { display: flex; }
+        #autoMicOverlay .big-mic {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid #e94560;
+            background: #16213e;
+            color: #e94560;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1.5s infinite;
+        }
+        #autoMicOverlay .overlay-text {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 24px;
+        }
+        #autoMicOverlay .overlay-hint {
+            color: #888;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
         /* Sign-in screen */
         #signIn {
             display: flex;
@@ -223,6 +261,20 @@
     </style>
 </head>
 <body>
+
+<!-- Auto-mic overlay (shown when launched via ?automic=1) -->
+<div id="autoMicOverlay">
+    <div class="big-mic">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+    </div>
+    <div class="overlay-text">Tap anywhere to record</div>
+    <div class="overlay-hint">Quick Notes is ready</div>
+</div>
 
 <!-- Sign-in screen -->
 <div id="signIn">
@@ -465,13 +517,41 @@
         voiceRecognition.start();
     }
 
-    // Auto-start mic when PWA opens (if already authenticated)
+    // Auto-start mic when PWA opens or launched with ?automic=1
+    const AUTO_MIC = new URLSearchParams(window.location.search).has('automic');
+
     function tryAutoMic() {
-        // Only auto-start in standalone/PWA mode
-        if (window.matchMedia('(display-mode: standalone)').matches) {
+        if (AUTO_MIC) {
+            // Launched via Samsung Routine or similar — show tap overlay
+            // Try auto-start first; if browser blocks it, overlay catches the tap
+            try {
+                toggleVoice();
+                // If we got here without error, mic started — no overlay needed
+                // But SpeechRecognition errors are async, so show overlay briefly
+                const overlay = document.getElementById('autoMicOverlay');
+                overlay.classList.add('active');
+                // If mic is already listening after a short delay, hide overlay
+                setTimeout(() => {
+                    if (voiceRecognition) {
+                        overlay.classList.remove('active');
+                    }
+                }, 600);
+            } catch (e) {
+                // Browser blocked it — show overlay for user tap
+                document.getElementById('autoMicOverlay').classList.add('active');
+            }
+        } else if (window.matchMedia('(display-mode: standalone)').matches) {
             setTimeout(() => toggleVoice(), 500);
         }
     }
+
+    // Overlay tap handler — starts mic with a real user gesture
+    document.getElementById('autoMicOverlay').addEventListener('click', function() {
+        this.classList.remove('active');
+        if (!voiceRecognition) {
+            toggleVoice();
+        }
+    });
 
     // Keyboard input
     function sendTypedNote() {
