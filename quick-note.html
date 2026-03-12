@@ -8,13 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <title>Quick Notes</title>
-    <script>
-        // If opened in Samsung Browser with ?automic, redirect to Chrome immediately
-        if (/SamsungBrowser/i.test(navigator.userAgent) && location.search.indexOf('automic') !== -1) {
-            window.location.href = 'intent://pfeiffrk.github.io/list/quick-note.html?automic#Intent;scheme=https;package=com.android.chrome;end';
-        }
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
     <style>
@@ -27,44 +21,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        /* Auto-mic overlay */
-        #autoMicOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #1a1a2e;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-        #autoMicOverlay.active { display: flex; }
-        #autoMicOverlay .big-mic {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            border: 4px solid #e94560;
-            background: #16213e;
-            color: #e94560;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: pulse 1.5s infinite;
-        }
-        #autoMicOverlay .overlay-text {
-            color: #fff;
-            font-size: 20px;
-            font-weight: 600;
-            margin-top: 24px;
-        }
-        #autoMicOverlay .overlay-hint {
-            color: #888;
-            font-size: 14px;
-            margin-top: 8px;
         }
 
         /* Sign-in screen */
@@ -267,21 +223,6 @@
     </style>
 </head>
 <body>
-
-<!-- Auto-mic overlay (shown when launched via ?automic=1) -->
-<div id="autoMicOverlay">
-    <div class="big-mic">
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-    </div>
-    <div class="overlay-text" id="overlayText">Tap anywhere to record</div>
-    <div class="overlay-hint" id="overlayHint">Quick Notes is ready</div>
-    <a id="overlayChromeLink" style="display:none;margin-top:24px;padding:14px 28px;background:#e94560;color:#fff;border-radius:8px;font-size:16px;font-weight:600;text-decoration:none;">Open in Chrome instead</a>
-</div>
 
 <!-- Sign-in screen -->
 <div id="signIn">
@@ -524,110 +465,14 @@
         voiceRecognition.start();
     }
 
-    // Auto-start mic when PWA opens or launched with ?automic=1
+    // Auto-start mic when PWA opens or launched with ?automic
     const AUTO_MIC = new URLSearchParams(window.location.search).has('automic');
-    const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent);
-    const CHROME_INTENT = 'intent://pfeiffrk.github.io/list/quick-note.html?automic#Intent;scheme=https;package=com.android.chrome;end';
 
     function tryAutoMic() {
-        if (AUTO_MIC) {
-            document.getElementById('autoMicOverlay').classList.add('active');
-            // Check if SpeechRecognition is available at all
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) {
-                showOverlayError('Voice not supported in this browser');
-                return;
-            }
-        } else if (window.matchMedia('(display-mode: standalone)').matches) {
+        if (AUTO_MIC || window.matchMedia('(display-mode: standalone)').matches) {
             setTimeout(() => toggleVoice(), 500);
         }
     }
-
-    function showOverlayError(msg) {
-        document.getElementById('overlayText').textContent = msg;
-        document.getElementById('overlayHint').textContent = 'Samsung Browser has limited voice support';
-        const link = document.getElementById('overlayChromeLink');
-        link.style.display = 'block';
-        link.href = CHROME_INTENT;
-    }
-
-    // Overlay tap handler — starts mic with a real user gesture
-    document.getElementById('autoMicOverlay').addEventListener('click', function(e) {
-        // Don't intercept the Chrome link tap
-        if (e.target.id === 'overlayChromeLink') return;
-
-        const overlayText = document.getElementById('overlayText');
-        const overlayHint = document.getElementById('overlayHint');
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SR) {
-            showOverlayError('Voice not supported in this browser');
-            return;
-        }
-
-        // Try starting mic on this user gesture
-        overlayText.textContent = 'Starting mic...';
-        overlayHint.textContent = '';
-
-        const rec = new SR();
-        rec.lang = 'en-US';
-        rec.interimResults = false;
-        rec.continuous = false;
-
-        rec.onstart = function() {
-            // Mic is actually running — dismiss overlay
-            document.getElementById('autoMicOverlay').classList.remove('active');
-            document.getElementById('micBtn').classList.add('listening');
-            document.getElementById('micStatus').textContent = 'Listening...';
-            document.getElementById('micStatus').className = 'mic-status';
-            voiceRecognition = rec;
-        };
-
-        rec.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('micBtn').classList.remove('listening');
-            voiceRecognition = null;
-            const status = document.getElementById('micStatus');
-            status.textContent = 'Saving...';
-            addNote(transcript).then(() => {
-                status.textContent = 'Saved!';
-                status.className = 'mic-status success';
-                setTimeout(() => { status.textContent = 'Tap mic to record'; status.className = 'mic-status'; }, 2000);
-            });
-        };
-
-        rec.onerror = function(event) {
-            document.getElementById('micBtn').classList.remove('listening');
-            voiceRecognition = null;
-            if (event.error === 'not-allowed') {
-                overlayText.textContent = 'Microphone access denied';
-                overlayHint.textContent = 'Check browser permissions for this site';
-                document.getElementById('overlayChromeLink').style.display = 'block';
-                document.getElementById('overlayChromeLink').href = CHROME_INTENT;
-            } else {
-                overlayText.textContent = 'Error: ' + event.error;
-                overlayHint.textContent = 'Tap to try again, or use Chrome';
-                document.getElementById('overlayChromeLink').style.display = 'block';
-                document.getElementById('overlayChromeLink').href = CHROME_INTENT;
-            }
-        };
-
-        rec.onend = function() {
-            if (voiceRecognition === rec) {
-                document.getElementById('micBtn').classList.remove('listening');
-                voiceRecognition = null;
-            }
-        };
-
-        try {
-            rec.start();
-        } catch (e) {
-            overlayText.textContent = 'Failed to start: ' + e.message;
-            overlayHint.textContent = '';
-            document.getElementById('overlayChromeLink').style.display = 'block';
-            document.getElementById('overlayChromeLink').href = CHROME_INTENT;
-        }
-    });
 
     // Keyboard input
     function sendTypedNote() {
