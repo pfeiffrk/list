@@ -8,6 +8,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <title>Quick Notes</title>
+    <script>
+        // If opened in Samsung Browser with ?automic, redirect to Chrome immediately
+        if (/SamsungBrowser/i.test(navigator.userAgent) && location.search.indexOf('automic') !== -1) {
+            window.location.href = 'intent://pfeiffrk.github.io/list/quick-note.html?automic#Intent;scheme=https;package=com.android.chrome;end';
+        }
+    </script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
