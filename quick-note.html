@@ -272,8 +272,9 @@
             <line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
     </div>
-    <div class="overlay-text">Tap anywhere to record</div>
-    <div class="overlay-hint">Quick Notes is ready</div>
+    <div class="overlay-text" id="overlayText">Tap anywhere to record</div>
+    <div class="overlay-hint" id="overlayHint">Quick Notes is ready</div>
+    <a id="overlayChromeLink" style="display:none;margin-top:24px;padding:14px 28px;background:#e94560;color:#fff;border-radius:8px;font-size:16px;font-weight:600;text-decoration:none;">Open in Chrome instead</a>
 </div>
 
 <!-- Sign-in screen -->
@@ -519,37 +520,106 @@
 
     // Auto-start mic when PWA opens or launched with ?automic=1
     const AUTO_MIC = new URLSearchParams(window.location.search).has('automic');
+    const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent);
+    const CHROME_INTENT = 'intent://pfeiffrk.github.io/list/quick-note.html?automic#Intent;scheme=https;package=com.android.chrome;end';
 
     function tryAutoMic() {
         if (AUTO_MIC) {
-            // Launched via Samsung Routine or similar — show tap overlay
-            // Try auto-start first; if browser blocks it, overlay catches the tap
-            try {
-                toggleVoice();
-                // If we got here without error, mic started — no overlay needed
-                // But SpeechRecognition errors are async, so show overlay briefly
-                const overlay = document.getElementById('autoMicOverlay');
-                overlay.classList.add('active');
-                // If mic is already listening after a short delay, hide overlay
-                setTimeout(() => {
-                    if (voiceRecognition) {
-                        overlay.classList.remove('active');
-                    }
-                }, 600);
-            } catch (e) {
-                // Browser blocked it — show overlay for user tap
-                document.getElementById('autoMicOverlay').classList.add('active');
+            document.getElementById('autoMicOverlay').classList.add('active');
+            // Check if SpeechRecognition is available at all
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+                showOverlayError('Voice not supported in this browser');
+                return;
             }
         } else if (window.matchMedia('(display-mode: standalone)').matches) {
             setTimeout(() => toggleVoice(), 500);
         }
     }
 
+    function showOverlayError(msg) {
+        document.getElementById('overlayText').textContent = msg;
+        document.getElementById('overlayHint').textContent = 'Samsung Browser has limited voice support';
+        const link = document.getElementById('overlayChromeLink');
+        link.style.display = 'block';
+        link.href = CHROME_INTENT;
+    }
+
     // Overlay tap handler — starts mic with a real user gesture
-    document.getElementById('autoMicOverlay').addEventListener('click', function() {
-        this.classList.remove('active');
-        if (!voiceRecognition) {
-            toggleVoice();
+    document.getElementById('autoMicOverlay').addEventListener('click', function(e) {
+        // Don't intercept the Chrome link tap
+        if (e.target.id === 'overlayChromeLink') return;
+
+        const overlayText = document.getElementById('overlayText');
+        const overlayHint = document.getElementById('overlayHint');
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SR) {
+            showOverlayError('Voice not supported in this browser');
+            return;
+        }
+
+        // Try starting mic on this user gesture
+        overlayText.textContent = 'Starting mic...';
+        overlayHint.textContent = '';
+
+        const rec = new SR();
+        rec.lang = 'en-US';
+        rec.interimResults = false;
+        rec.continuous = false;
+
+        rec.onstart = function() {
+            // Mic is actually running — dismiss overlay
+            document.getElementById('autoMicOverlay').classList.remove('active');
+            document.getElementById('micBtn').classList.add('listening');
+            document.getElementById('micStatus').textContent = 'Listening...';
+            document.getElementById('micStatus').className = 'mic-status';
+            voiceRecognition = rec;
+        };
+
+        rec.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('micBtn').classList.remove('listening');
+            voiceRecognition = null;
+            const status = document.getElementById('micStatus');
+            status.textContent = 'Saving...';
+            addNote(transcript).then(() => {
+                status.textContent = 'Saved!';
+                status.className = 'mic-status success';
+                setTimeout(() => { status.textContent = 'Tap mic to record'; status.className = 'mic-status'; }, 2000);
+            });
+        };
+
+        rec.onerror = function(event) {
+            document.getElementById('micBtn').classList.remove('listening');
+            voiceRecognition = null;
+            if (event.error === 'not-allowed') {
+                overlayText.textContent = 'Microphone access denied';
+                overlayHint.textContent = 'Check browser permissions for this site';
+                document.getElementById('overlayChromeLink').style.display = 'block';
+                document.getElementById('overlayChromeLink').href = CHROME_INTENT;
+            } else {
+                overlayText.textContent = 'Error: ' + event.error;
+                overlayHint.textContent = 'Tap to try again, or use Chrome';
+                document.getElementById('overlayChromeLink').style.display = 'block';
+                document.getElementById('overlayChromeLink').href = CHROME_INTENT;
+            }
+        };
+
+        rec.onend = function() {
+            if (voiceRecognition === rec) {
+                document.getElementById('micBtn').classList.remove('listening');
+                voiceRecognition = null;
+            }
+        };
+
+        try {
+            rec.start();
+        } catch (e) {
+            overlayText.textContent = 'Failed to start: ' + e.message;
+            overlayHint.textContent = '';
+            document.getElementById('overlayChromeLink').style.display = 'block';
+            document.getElementById('overlayChromeLink').href = CHROME_INTENT;
         }
     });
 
