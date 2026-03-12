@@ -469,8 +469,22 @@
     const AUTO_MIC = new URLSearchParams(window.location.search).has('automic');
 
     function tryAutoMic() {
-        if (AUTO_MIC || window.matchMedia('(display-mode: standalone)').matches) {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            // PWA standalone — mic allowed without gesture
             setTimeout(() => toggleVoice(), 500);
+        } else if (AUTO_MIC) {
+            // Regular Chrome tab — need one tap for user gesture
+            // First tap anywhere on the page starts recording
+            function onFirstTap() {
+                document.removeEventListener('click', onFirstTap, true);
+                document.removeEventListener('touchend', onFirstTap, true);
+                toggleVoice();
+            }
+            document.addEventListener('click', onFirstTap, true);
+            document.addEventListener('touchend', onFirstTap, true);
+            // Pulse the mic button to signal "tap to start"
+            document.getElementById('micBtn').classList.add('listening');
+            document.getElementById('micStatus').textContent = 'Tap anywhere to start recording';
         }
     }
 
