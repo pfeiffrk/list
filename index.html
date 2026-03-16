@@ -974,6 +974,45 @@
             background: #ddd;
             margin: 4px 0;
         }
+        #noteCtxMenu .ctx-sub {
+            position: relative;
+        }
+        #noteCtxMenu .ctx-sub > .ctx-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #noteCtxMenu .ctx-sub > .ctx-item::after {
+            content: '\25B6';
+            font-size: 8px;
+            margin-left: 12px;
+            color: #999;
+        }
+        #noteCtxMenu .ctx-submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: -4px;
+            background: #fff;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            padding: 4px 0;
+            min-width: 160px;
+            z-index: 3001;
+        }
+        #noteCtxMenu .ctx-sub:hover > .ctx-submenu {
+            display: block;
+        }
+        #noteCtxMenu .ctx-submenu .ctx-item {
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        #noteCtxMenu .ctx-submenu .ctx-item:hover {
+            background: #e8f0fb;
+        }
 
         /* ── Shape Boxes ── */
         .shape-box {
@@ -1698,6 +1737,23 @@
     <div class="ctx-item" id="ctxDuplicate">Duplicate</div>
     <div class="ctx-sep"></div>
     <div class="ctx-item" id="ctxPaste">Paste</div>
+    <div class="ctx-sep" id="ctxAlignSep"></div>
+    <div class="ctx-sub" id="ctxAlignSub">
+        <div class="ctx-item">Align</div>
+        <div class="ctx-submenu">
+            <div class="ctx-item" onclick="alignNotes('left')">Align Left</div>
+            <div class="ctx-item" onclick="alignNotes('right')">Align Right</div>
+            <div class="ctx-item" onclick="alignNotes('top')">Align Top</div>
+            <div class="ctx-item" onclick="alignNotes('bottom')">Align Bottom</div>
+        </div>
+    </div>
+    <div class="ctx-sub" id="ctxDistSub">
+        <div class="ctx-item">Distribute</div>
+        <div class="ctx-submenu">
+            <div class="ctx-item" onclick="distributeNotes('horizontal')">Distribute Horizontally</div>
+            <div class="ctx-item" onclick="distributeNotes('vertical')">Distribute Vertically</div>
+        </div>
+    </div>
     <div class="ctx-sep"></div>
     <div class="ctx-item" id="ctxDelete" style="color:#c44;">Delete</div>
 </div>
@@ -3337,6 +3393,10 @@
             dupItem.style.display = '';
             deleteItem.style.display = '';
             pasteItem.classList.toggle('disabled', !clipboardBoxes);
+            const multiSel = selectedBoxes.size >= 2;
+            document.getElementById('ctxAlignSep').style.display = multiSel ? '' : 'none';
+            document.getElementById('ctxAlignSub').style.display = multiSel ? '' : 'none';
+            document.getElementById('ctxDistSub').style.display = multiSel ? '' : 'none';
         } else {
             // Right-clicked on empty canvas — use this position for paste
             hideCanvasCursor();
@@ -3385,6 +3445,76 @@
             if (hint) hint.style.display = '';
         }
     });
+
+    // ── Align & Distribute ──
+    window.alignNotes = function(direction) {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        if (selectedBoxes.size < 2) return;
+        const boxes = [...selectedBoxes];
+        if (direction === 'left') {
+            const minLeft = Math.min(...boxes.map(b => parseInt(b.style.left) || 0));
+            boxes.forEach(b => { b.style.left = minLeft + 'px'; });
+        } else if (direction === 'right') {
+            const maxRight = Math.max(...boxes.map(b => (parseInt(b.style.left) || 0) + b.offsetWidth));
+            boxes.forEach(b => { b.style.left = (maxRight - b.offsetWidth) + 'px'; });
+        } else if (direction === 'top') {
+            const minTop = Math.min(...boxes.map(b => parseInt(b.style.top) || 0));
+            boxes.forEach(b => { b.style.top = minTop + 'px'; });
+        } else if (direction === 'bottom') {
+            const maxBottom = Math.max(...boxes.map(b => (parseInt(b.style.top) || 0) + b.offsetHeight));
+            boxes.forEach(b => { b.style.top = (maxBottom - b.offsetHeight) + 'px'; });
+        }
+        scheduleSave();
+    };
+
+    window.distributeNotes = function(direction) {
+        document.getElementById('noteCtxMenu').style.display = 'none';
+        if (selectedBoxes.size < 3) {
+            // With 2 notes, just center them
+            if (selectedBoxes.size === 2) {
+                const boxes = [...selectedBoxes];
+                if (direction === 'horizontal') {
+                    boxes.sort((a, b) => (parseInt(a.style.left) || 0) - (parseInt(b.style.left) || 0));
+                } else {
+                    boxes.sort((a, b) => (parseInt(a.style.top) || 0) - (parseInt(b.style.top) || 0));
+                }
+            }
+            return;
+        }
+        const boxes = [...selectedBoxes];
+        if (direction === 'horizontal') {
+            boxes.sort((a, b) => (parseInt(a.style.left) || 0) - (parseInt(b.style.left) || 0));
+            const firstLeft = parseInt(boxes[0].style.left) || 0;
+            const lastLeft = parseInt(boxes[boxes.length - 1].style.left) || 0;
+            const lastWidth = boxes[boxes.length - 1].offsetWidth;
+            const totalSpan = (lastLeft + lastWidth) - firstLeft;
+            const totalBoxWidth = boxes.reduce((sum, b) => sum + b.offsetWidth, 0);
+            const gap = (totalSpan - totalBoxWidth) / (boxes.length - 1);
+            let x = firstLeft;
+            boxes.forEach((b, i) => {
+                if (i === 0) { x += b.offsetWidth + gap; return; }
+                if (i === boxes.length - 1) return;
+                b.style.left = Math.round(x) + 'px';
+                x += b.offsetWidth + gap;
+            });
+        } else {
+            boxes.sort((a, b) => (parseInt(a.style.top) || 0) - (parseInt(b.style.top) || 0));
+            const firstTop = parseInt(boxes[0].style.top) || 0;
+            const lastTop = parseInt(boxes[boxes.length - 1].style.top) || 0;
+            const lastHeight = boxes[boxes.length - 1].offsetHeight;
+            const totalSpan = (lastTop + lastHeight) - firstTop;
+            const totalBoxHeight = boxes.reduce((sum, b) => sum + b.offsetHeight, 0);
+            const gap = (totalSpan - totalBoxHeight) / (boxes.length - 1);
+            let y = firstTop;
+            boxes.forEach((b, i) => {
+                if (i === 0) { y += b.offsetHeight + gap; return; }
+                if (i === boxes.length - 1) return;
+                b.style.top = Math.round(y) + 'px';
+                y += b.offsetHeight + gap;
+            });
+        }
+        scheduleSave();
+    };
 
     // ── Delete key removes all selected boxes/shapes ──
     document.addEventListener('keydown', (e) => {
